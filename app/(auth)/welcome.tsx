@@ -48,7 +48,7 @@ export default function Welcome() {
           <Button 
             size="lg" 
             className="bg-black rounded-full h-14"
-            onPress={() => {}}
+            onPress={() => {router.push('/signup')}}
           >
             <ButtonText className="text-base font-semibold text-white">
               Get started
@@ -59,7 +59,7 @@ export default function Welcome() {
             size="lg" 
             variant="outline"
             className="border border-gray-200 rounded-full h-14"
-            onPress={() => {}}
+            onPress={() => {router.push('/verify-email')}}
           >
             <ButtonText className="text-base font-semibold text-black">
               Log in

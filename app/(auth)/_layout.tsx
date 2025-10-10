@@ -2,8 +2,11 @@ import { Stack } from "expo-router";
 
 const Layout = () => {
   return (
-    <Stack>
-      <Stack.Screen name="welcome" options={{headerShown:false}}/>
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="welcome" />
+      <Stack.Screen name="signup" />
+      <Stack.Screen name="login" />
+      <Stack.Screen name="verify-email" />
     </Stack>
   );
 };
