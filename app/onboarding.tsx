@@ -4,21 +4,21 @@ import VerificationInfo from "@/components/onboarding/VerificationInfo";
 import { Heading } from "@/components/ui/heading";
 import { Progress, ProgressFilledTrack } from "@/components/ui/progress";
 import { VStack } from "@/components/ui/vstack";
-import { useRef, useState } from "react";
+import { useOnboarding } from "@/hooks/useOnboarding";
+import { useRef } from "react";
 import { ScrollView, Text, View } from "react-native";
 import PagerView from "react-native-pager-view";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Onboarding() {
   const pagerRef = useRef<PagerView>(null);
-  const [currentPage, setCurrentPage] = useState(0);
-  const [formData, setFormData] = useState<{
-    basicInfo: any | null;
-    professionalInfo: any | null;
-  }>({
-    basicInfo: null,
-    professionalInfo: null,
-  });
+  const {
+    currentStep,
+    isSubmitting,
+    submitBasicInfo,
+    submitProfessionalInfo,
+    submitVerificationInfo,
+  } = useOnboarding();
 
   const headings = [
     {
@@ -38,38 +38,11 @@ export default function Onboarding() {
     },
   ];
 
-  const goToNextPage = () => {
-    if (currentPage < 2) {
-      pagerRef.current?.setPage(currentPage + 1);
-    }
+  const handlePageChange = (page: number) => {
+    pagerRef.current?.setPage(page);
   };
 
-  const handleBasicInfoSubmit = (data: any) => {
-    console.log("Basic Info submitted:", data);
-    setFormData((prev) => ({ ...prev, basicInfo: data }));
-    goToNextPage();
-  };
-
-  const handleProfessionalInfoSubmit = (data: any) => {
-    console.log("Professional Info submitted:", data);
-    setFormData((prev) => ({ ...prev, professionalInfo: data }));
-    
-    // Combine all form data - check if basicInfo exists
-    const completeData = {
-      ...(formData.basicInfo || {}),
-      ...data,
-    };
-    
-    console.log("Complete onboarding data:", completeData);
-    
-    // Here you would typically:
-    // 1. Send data to your API
-    // 2. Navigate to the next screen or complete onboarding
-    
-    goToNextPage(); // Move to verification step (when you add it)
-  };
-
-  const progressValue = ((currentPage + 1) / 3) * 100;
+  const progressValue = ((currentStep + 1) / 3) * 100;
 
   return (
     <SafeAreaView className="flex-1 bg-white">
@@ -84,10 +57,10 @@ export default function Onboarding() {
 
         <VStack className="mt-5 mb-4">
           <Heading size="3xl" className="text-3xl font-onest-bold text-black">
-            {headings[currentPage].title}
+            {headings[currentStep].title}
           </Heading>
           <Text className="text-base text-gray-600 mt-2">
-            {headings[currentPage].description}
+            {headings[currentStep].description}
           </Text>
         </VStack>
 
@@ -96,7 +69,9 @@ export default function Onboarding() {
           style={{ flex: 1 }}
           initialPage={0}
           scrollEnabled={false}
-          onPageSelected={(e) => setCurrentPage(e.nativeEvent.position)}
+          onPageSelected={(e) => {
+            // Sync with pager view changes if needed
+          }}
         >
           <View key="1" className="flex-1">
             <ScrollView
@@ -105,7 +80,13 @@ export default function Onboarding() {
               keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator={false}
             >
-              <BasicInfo onSubmit={handleBasicInfoSubmit} />
+              <BasicInfo 
+                onSubmit={async (data) => {
+                  await submitBasicInfo(data);
+                  handlePageChange(1);
+                }}
+                isSubmitting={isSubmitting}
+              />
             </ScrollView>
           </View>
 
@@ -116,7 +97,13 @@ export default function Onboarding() {
               keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator={false}
             >
-              <ProfessionalInfo onSubmit={handleProfessionalInfoSubmit} />
+              <ProfessionalInfo 
+                onSubmit={async (data) => {
+                  await submitProfessionalInfo(data);
+                  handlePageChange(2);
+                }}
+                isSubmitting={isSubmitting}
+              />
             </ScrollView>
           </View>
 
@@ -127,7 +114,10 @@ export default function Onboarding() {
               keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator={false}
             >
-             <VerificationInfo onSubmit={handleProfessionalInfoSubmit}/>
+              <VerificationInfo 
+                onSubmit={submitVerificationInfo}
+                isSubmitting={isSubmitting}
+              />
             </ScrollView>
           </View>
         </PagerView>

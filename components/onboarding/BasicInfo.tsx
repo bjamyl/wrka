@@ -10,7 +10,7 @@ import { Input, InputField } from "@/components/ui/input";
 import { VStack } from "@/components/ui/vstack";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { Controller, useForm } from "react-hook-form";
-import { View } from "react-native";
+import { ActivityIndicator, View } from "react-native";
 import * as yup from "yup";
 
 const schema = yup.object().shape({
@@ -28,10 +28,14 @@ const schema = yup.object().shape({
 type FormData = yup.InferType<typeof schema>;
 
 interface BasicInfoProps {
-  onSubmit?: (data: FormData) => void;
+  onSubmit?: (data: FormData) => void | Promise<void>;
+  isSubmitting?: boolean;
 }
 
-export default function BasicInfo({ onSubmit: onSubmitProp }: BasicInfoProps) {
+export default function BasicInfo({ 
+  onSubmit: onSubmitProp,
+  isSubmitting = false 
+}: BasicInfoProps) {
   const {
     control,
     handleSubmit,
@@ -48,11 +52,11 @@ export default function BasicInfo({ onSubmit: onSubmitProp }: BasicInfoProps) {
     },
   });
 
-  const onSubmit = (data: FormData) => {
+  const onSubmit = async (data: FormData) => {
     console.log("Form data:", data);
     
     if (onSubmitProp) {
-      onSubmitProp(data);
+      await onSubmitProp(data);
     }
   };
 
@@ -74,6 +78,7 @@ export default function BasicInfo({ onSubmit: onSubmitProp }: BasicInfoProps) {
                 value={value}
                 onChangeText={onChange}
                 onBlur={onBlur}
+                editable={!isSubmitting}
               />
             </Input>
             <FormControlError>
@@ -102,6 +107,7 @@ export default function BasicInfo({ onSubmit: onSubmitProp }: BasicInfoProps) {
                 onChangeText={onChange}
                 onBlur={onBlur}
                 keyboardType="phone-pad"
+                editable={!isSubmitting}
               />
             </Input>
             <FormControlError>
@@ -129,6 +135,7 @@ export default function BasicInfo({ onSubmit: onSubmitProp }: BasicInfoProps) {
                 value={value}
                 onChangeText={onChange}
                 onBlur={onBlur}
+                editable={!isSubmitting}
               />
             </Input>
             <FormControlError>
@@ -156,6 +163,7 @@ export default function BasicInfo({ onSubmit: onSubmitProp }: BasicInfoProps) {
                 value={value}
                 onChangeText={onChange}
                 onBlur={onBlur}
+                editable={!isSubmitting}
               />
             </Input>
             <FormControlError>
@@ -183,6 +191,7 @@ export default function BasicInfo({ onSubmit: onSubmitProp }: BasicInfoProps) {
                 value={value}
                 onChangeText={onChange}
                 onBlur={onBlur}
+                editable={!isSubmitting}
               />
             </Input>
             <FormControlError>
@@ -210,6 +219,7 @@ export default function BasicInfo({ onSubmit: onSubmitProp }: BasicInfoProps) {
                 value={value}
                 onChangeText={onChange}
                 onBlur={onBlur}
+                editable={!isSubmitting}
               />
             </Input>
             <FormControlError>
@@ -225,10 +235,15 @@ export default function BasicInfo({ onSubmit: onSubmitProp }: BasicInfoProps) {
         <Button 
           className="w-full rounded-full h-14 bg-black"
           onPress={handleSubmit(onSubmit)}
+          disabled={isSubmitting}
         >
-          <ButtonText className="text-lg text-white font-onest-bold">
-            Continue
-          </ButtonText>
+          {isSubmitting ? (
+            <ActivityIndicator color="white" />
+          ) : (
+            <ButtonText className="text-lg text-white font-onest-bold">
+              Continue
+            </ButtonText>
+          )}
         </Button>
       </View>
     </VStack>

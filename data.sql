@@ -1,0 +1,36 @@
+CREATE TABLE public.handyman_profiles (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  bio text,
+  years_experience integer,
+  hourly_rate numeric,
+  is_available boolean DEFAULT true,
+  is_verified boolean DEFAULT false,
+  rating numeric DEFAULT 0,
+  total_jobs integer DEFAULT 0,
+  location_lat numeric,
+  location_lng numeric,
+  service_radius_km integer DEFAULT 10,
+  profile_id uuid NOT NULL,
+  certified boolean DEFAULT false,
+  certificates jsonb,
+  CONSTRAINT handyman_profiles_pkey PRIMARY KEY (id),
+  CONSTRAINT handyman_profiles_profile_id_fkey FOREIGN KEY (profile_id) REFERENCES public.profiles(id)
+);
+CREATE TABLE public.profiles (
+  id uuid NOT NULL,
+  full_name text NOT NULL,
+  phone_number text,
+  avatar_url text,
+  role text NOT NULL CHECK (role = ANY (ARRAY['customer'::text, 'handyman'::text])),
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  id_type text,
+  id_number text,
+  city text,
+  region text,
+  district text,
+  locality text,
+  country text DEFAULT 'Ghana'::text,
+  CONSTRAINT profiles_pkey PRIMARY KEY (id),
+  CONSTRAINT profiles_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id)
+);

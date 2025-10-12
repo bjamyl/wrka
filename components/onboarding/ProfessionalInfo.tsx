@@ -7,6 +7,7 @@ import {
   FormControlLabelText,
 } from "@/components/ui/form-control";
 import { Input, InputField } from "@/components/ui/input";
+import { Textarea, TextareaInput } from "@/components/ui/textarea";
 import { VStack } from "@/components/ui/vstack";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as Location from "expo-location";
@@ -38,10 +39,14 @@ const schema = yup.object().shape({
 type FormData = yup.InferType<typeof schema>;
 
 interface ProfessionalInfoProps {
-  onSubmit?: (data: FormData) => void;
+  onSubmit?: (data: FormData) => void | Promise<void>;
+  isSubmitting?: boolean;
 }
 
-export default function ProfessionalInfo({ onSubmit: onSubmitProp }: ProfessionalInfoProps) {
+export default function ProfessionalInfo({
+  onSubmit: onSubmitProp,
+  isSubmitting = false,
+}: ProfessionalInfoProps) {
   const [locationLoading, setLocationLoading] = useState(false);
   const [locationStatus, setLocationStatus] = useState<string>("");
 
@@ -69,7 +74,7 @@ export default function ProfessionalInfo({ onSubmit: onSubmitProp }: Professiona
 
         // Request location permissions
         let { status } = await Location.requestForegroundPermissionsAsync();
-        
+
         if (status !== "granted") {
           Alert.alert(
             "Permission Denied",
@@ -91,7 +96,7 @@ export default function ProfessionalInfo({ onSubmit: onSubmitProp }: Professiona
         // Set the latitude and longitude in the form
         setValue("latitude", location.coords.latitude.toString());
         setValue("longitude", location.coords.longitude.toString());
-        
+
         setLocationStatus("Location captured successfully ✓");
       } catch (error) {
         console.error("Error getting location:", error);
@@ -109,7 +114,7 @@ export default function ProfessionalInfo({ onSubmit: onSubmitProp }: Professiona
 
   const onSubmit = (data: FormData) => {
     console.log("Form data:", data);
-    
+
     if (onSubmitProp) {
       onSubmitProp(data);
     }
@@ -128,17 +133,25 @@ export default function ProfessionalInfo({ onSubmit: onSubmitProp }: Professiona
                 Bio
               </FormControlLabelText>
             </FormControlLabel>
-            <Input className="my-1 rounded-xl" size="xl">
-              <InputField
+            <Textarea
+              size="xl"
+              isReadOnly={false}
+              isInvalid={false}
+              isDisabled={false}
+              className="w-full rounded-xl"
+            >
+              <TextareaInput
                 placeholder="Tell us about your skills and experience..."
+                className="pt-1"
                 value={value}
                 onChangeText={onChange}
                 onBlur={onBlur}
                 multiline
-                numberOfLines={4}
+                numberOfLines={5}
                 textAlignVertical="top"
+                editable={!isSubmitting}
               />
-            </Input>
+            </Textarea>
             <FormControlError>
               <FormControlErrorText className="text-red-500">
                 {errors.bio?.message}
@@ -168,6 +181,7 @@ export default function ProfessionalInfo({ onSubmit: onSubmitProp }: Professiona
                 }}
                 onBlur={onBlur}
                 keyboardType="number-pad"
+                editable={!isSubmitting}
               />
             </Input>
             <FormControlError>
@@ -199,6 +213,7 @@ export default function ProfessionalInfo({ onSubmit: onSubmitProp }: Professiona
                 }}
                 onBlur={onBlur}
                 keyboardType="decimal-pad"
+                editable={!isSubmitting}
               />
             </Input>
             <FormControlError>
@@ -234,11 +249,15 @@ export default function ProfessionalInfo({ onSubmit: onSubmitProp }: Professiona
         <Button
           className="w-full rounded-full h-14 bg-black"
           onPress={handleSubmit(onSubmit)}
-          disabled={locationLoading}
+          disabled={isSubmitting}
         >
-          <ButtonText className="text-lg text-white font-onest-bold">
-            Continue
-          </ButtonText>
+          {isSubmitting ? (
+            <ActivityIndicator color="white" />
+          ) : (
+            <ButtonText className="text-lg text-white font-onest-bold">
+              Continue
+            </ButtonText>
+          )}
         </Button>
       </View>
     </VStack>

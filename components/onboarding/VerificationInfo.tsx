@@ -5,19 +5,24 @@ import {
   FormControlErrorText,
   FormControlLabel,
   FormControlLabelText,
-  FormControlHelper,
-  FormControlHelperText,
 } from "@/components/ui/form-control";
-import { Input, InputField } from "@/components/ui/input";
-import { VStack } from "@/components/ui/vstack";
 import { HStack } from "@/components/ui/hstack";
-import { yupResolver } from "@hookform/resolvers/yup";
-import { Controller, useForm } from "react-hook-form";
-import { View, Text, TouchableOpacity, Alert } from "react-native";
-import * as yup from "yup";
-import { useState } from "react";
-import * as DocumentPicker from "expo-document-picker";
+import { Input, InputField } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+import { VStack } from "@/components/ui/vstack";
+import { useOnboarding } from "@/hooks/useOnboarding";
+import { yupResolver } from "@hookform/resolvers/yup";
+import * as DocumentPicker from "expo-document-picker";
+import { useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import {
+  ActivityIndicator,
+  Alert,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import * as yup from "yup";
 
 const ID_TYPES = [
   { label: "Ghana Card (National ID)", value: "ghana_card" },
@@ -38,15 +43,18 @@ const schema = yup.object().shape({
 type FormData = yup.InferType<typeof schema>;
 
 interface VerificationInfoProps {
-  onSubmit?: (data: FormData & { certificates: any[] }) => void;
+  onSubmit?: (data: FormData & { certificates: any[] }) => void | Promise<void>;
+  isSubmitting?: boolean;
 }
 
 export default function VerificationInfo({
   onSubmit: onSubmitProp,
+  isSubmitting = false,
 }: VerificationInfoProps) {
   const [showIdDropdown, setShowIdDropdown] = useState(false);
   const [addCertificates, setAddCertificates] = useState(false);
   const [certificates, setCertificates] = useState<any[]>([]);
+  const { goToPreviousStep } = useOnboarding();
 
   const {
     control,
@@ -80,8 +88,7 @@ export default function VerificationInfo({
       }
 
       const file = result.assets[0];
-      
-      // Check file size (max 5MB)
+
       if (file.size && file.size > 5 * 1024 * 1024) {
         Alert.alert("File Too Large", "Please select a file smaller than 5MB");
         return;
@@ -99,7 +106,7 @@ export default function VerificationInfo({
     setCertificates((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const onSubmit = (data: FormData) => {
+  const onSubmit = async (data: FormData) => {
     const submissionData = {
       ...data,
       certificates: addCertificates ? certificates : [],
@@ -108,13 +115,12 @@ export default function VerificationInfo({
     console.log("Verification data:", submissionData);
 
     if (onSubmitProp) {
-      onSubmitProp(submissionData);
+      await onSubmitProp(submissionData);
     }
   };
 
   return (
     <VStack space="lg" className="w-full pt-4">
-      {/* ID Type Dropdown */}
       <Controller
         control={control}
         name="id_type"
@@ -126,8 +132,11 @@ export default function VerificationInfo({
               </FormControlLabelText>
             </FormControlLabel>
             <TouchableOpacity
-              onPress={() => setShowIdDropdown(!showIdDropdown)}
+              onPress={() =>
+                !isSubmitting && setShowIdDropdown(!showIdDropdown)
+              }
               className="my-1"
+              disabled={isSubmitting}
             >
               <View className="border border-gray-300 rounded-xl p-4 bg-white">
                 <Text
@@ -140,7 +149,7 @@ export default function VerificationInfo({
               </View>
             </TouchableOpacity>
 
-            {showIdDropdown && (
+            {showIdDropdown && !isSubmitting && (
               <View className="border border-gray-200 rounded-xl mt-1 bg-white overflow-hidden">
                 {ID_TYPES.map((type) => (
                   <TouchableOpacity
@@ -168,7 +177,6 @@ export default function VerificationInfo({
         )}
       />
 
-      {/* ID Number */}
       <Controller
         control={control}
         name="id_number"
@@ -186,6 +194,7 @@ export default function VerificationInfo({
                 onChangeText={onChange}
                 onBlur={onBlur}
                 autoCapitalize="characters"
+                editable={!isSubmitting}
               />
             </Input>
             <FormControlError>
@@ -197,7 +206,6 @@ export default function VerificationInfo({
         )}
       />
 
-      {/* Certificates Section */}
       <View className="border-t border-gray-200 pt-4 mt-2">
         <HStack className="items-center justify-between mb-2">
           <View className="flex-1">
@@ -213,6 +221,7 @@ export default function VerificationInfo({
             onValueChange={setAddCertificates}
             trackColor={{ false: "#d1d5db", true: "#000000" }}
             thumbColor="#ffffff"
+            disabled={isSubmitting}
           />
         </HStack>
 
@@ -221,6 +230,7 @@ export default function VerificationInfo({
             <TouchableOpacity
               onPress={handlePickDocument}
               className="border-2 border-dashed border-gray-300 rounded-xl p-6 items-center justify-center bg-gray-50"
+              disabled={isSubmitting}
             >
               <Text className="text-4xl mb-2">📄</Text>
               <Text className="text-base font-onest-semibold text-black mb-1">
@@ -231,7 +241,6 @@ export default function VerificationInfo({
               </Text>
             </TouchableOpacity>
 
-            {/* Display uploaded certificates */}
             {certificates.length > 0 && (
               <View className="mt-4 space-y-2">
                 <Text className="text-sm font-onest-semibold text-gray-700">
@@ -256,6 +265,7 @@ export default function VerificationInfo({
                     <TouchableOpacity
                       onPress={() => removeCertificate(index)}
                       className="ml-2 p-2"
+                      disabled={isSubmitting}
                     >
                       <Text className="text-red-500 text-base">✕</Text>
                     </TouchableOpacity>
@@ -267,16 +277,28 @@ export default function VerificationInfo({
         )}
       </View>
 
-      <View className="mt-6">
+      <VStack space={"lg"} className="mt-6">
         <Button
           className="w-full rounded-full h-14 bg-black"
           onPress={handleSubmit(onSubmit)}
+          disabled={isSubmitting}
         >
-          <ButtonText className="text-lg text-white font-onest-bold">
-            Complete Setup
-          </ButtonText>
+          {isSubmitting ? (
+            <ActivityIndicator color="white" />
+          ) : (
+            <ButtonText className="text-lg text-white font-onest-bold">
+              Complete Setup
+            </ButtonText>
+          )}
         </Button>
-      </View>
+        <Button
+          onPress={() => goToPreviousStep}
+          variant="outline"
+          className="rounded-full h-14"
+        >
+          <ButtonText>Back</ButtonText>
+        </Button>
+      </VStack>
     </VStack>
   );
 }
