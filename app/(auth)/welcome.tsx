@@ -65,6 +65,16 @@ export default function Welcome() {
               Log in
             </ButtonText>
           </Button>
+          <Button 
+            size="lg" 
+            variant="outline"
+            className="border border-gray-200 rounded-full h-14"
+            onPress={() => {router.push('/onboarding')}}
+          >
+            <ButtonText className="text-base font-semibold text-black">
+              Onboarding
+            </ButtonText>
+          </Button>
         </VStack>
       </View>
 
