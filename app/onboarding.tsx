@@ -5,15 +5,16 @@ import { Heading } from "@/components/ui/heading";
 import { Progress, ProgressFilledTrack } from "@/components/ui/progress";
 import { VStack } from "@/components/ui/vstack";
 import { useOnboarding } from "@/hooks/useOnboarding";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 import PagerView from "react-native-pager-view";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Onboarding() {
   const pagerRef = useRef<PagerView>(null);
+  const [currentStep, setCurrentStep] = useState(0);
+
   const {
-    currentStep,
     isSubmitting,
     submitBasicInfo,
     submitProfessionalInfo,
@@ -38,8 +39,20 @@ export default function Onboarding() {
     },
   ];
 
-  const handlePageChange = (page: number) => {
-    pagerRef.current?.setPage(page);
+  const goToNextStep = () => {
+    setCurrentStep((prev) => {
+      const next = Math.min(prev + 1, 2);
+      pagerRef.current?.setPage(next);
+      return next;
+    });
+  };
+
+  const goToPreviousStep = () => {
+    setCurrentStep((prev) => {
+      const previous = Math.max(prev - 1, 0);
+      pagerRef.current?.setPage(previous);
+      return previous;
+    });
   };
 
   const progressValue = ((currentStep + 1) / 3) * 100;
@@ -50,7 +63,7 @@ export default function Onboarding() {
         <View className="mb-5">
           <Text className="text-3xl font-bold text-black">wrka.</Text>
         </View>
-        
+
         <Progress value={progressValue} size="sm">
           <ProgressFilledTrack />
         </Progress>
@@ -80,10 +93,10 @@ export default function Onboarding() {
               keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator={false}
             >
-              <BasicInfo 
+              <BasicInfo
                 onSubmit={async (data) => {
                   await submitBasicInfo(data);
-                  handlePageChange(1);
+                  goToNextStep();
                 }}
                 isSubmitting={isSubmitting}
               />
@@ -97,11 +110,12 @@ export default function Onboarding() {
               keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator={false}
             >
-              <ProfessionalInfo 
+              <ProfessionalInfo
                 onSubmit={async (data) => {
                   await submitProfessionalInfo(data);
-                  handlePageChange(2);
+                  goToNextStep();
                 }}
+                goToPreviousStep={goToPreviousStep}
                 isSubmitting={isSubmitting}
               />
             </ScrollView>
@@ -114,8 +128,9 @@ export default function Onboarding() {
               keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator={false}
             >
-              <VerificationInfo 
+              <VerificationInfo
                 onSubmit={submitVerificationInfo}
+                goToPreviousStep={goToPreviousStep}
                 isSubmitting={isSubmitting}
               />
             </ScrollView>

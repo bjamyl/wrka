@@ -1,6 +1,17 @@
 import { useState, useCallback } from 'react';
 import { Alert } from 'react-native';
 
+// Certificate type for Cloudinary references (stored as JSONB)
+export type Certificate = {
+  name: string;
+  url: string;
+  cloudinary_public_id: string;
+  uploaded_at: string;
+  file_type: string;
+  size: number;
+};
+
+// Types based on your database schema
 export type ProfileData = {
   full_name: string;
   phone_number: string;
@@ -23,14 +34,10 @@ export type HandymanProfileData = {
   location_lng?: number;
   service_radius_km?: number;
   certified: boolean;
-  certificates?: Array<{
-    name: string;
-    uri: string;
-    type: string;
-    size: number;
-  }>;
+  certificates?: Certificate[]; 
 };
 
+// Partial types for each step
 type BasicInfoStep = Pick<
   ProfileData,
   'full_name' | 'phone_number' | 'city' | 'region' | 'district' | 'country'
@@ -51,26 +58,20 @@ export type OnboardingData = {
   handymanProfile: Partial<HandymanProfileData>;
 };
 
-type OnboardingStep = 'basic' | 'professional' | 'verification';
 
 type UseOnboardingReturn = {
-  currentStep: number;
   isSubmitting: boolean;
   onboardingData: OnboardingData;
   submitBasicInfo: (data: BasicInfoStep) => Promise<void>;
   submitProfessionalInfo: (data: ProfessionalInfoStep) => Promise<void>;
   submitVerificationInfo: (data: VerificationInfoStep) => Promise<void>;
-  goToNextStep: () => void;
-  goToPreviousStep: () => void;
-  resetOnboarding: () => void;
 };
 
 export const useOnboarding = (): UseOnboardingReturn => {
-  const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [onboardingData, setOnboardingData] = useState<OnboardingData>({
     profile: {
-      role: 'handyman', 
+      role: 'handyman', // Default role, can be changed
       country: 'Ghana',
     },
     handymanProfile: {
@@ -79,6 +80,7 @@ export const useOnboarding = (): UseOnboardingReturn => {
     },
   });
 
+  // Submit basic information
   const submitBasicInfo = useCallback(async (data: BasicInfoStep) => {
     try {
       setIsSubmitting(true);
@@ -94,7 +96,6 @@ export const useOnboarding = (): UseOnboardingReturn => {
 
       console.log('Basic info saved locally:', data);
       
-      setCurrentStep(1);
     } catch (error) {
       console.error('Error saving basic info:', error);
       Alert.alert('Error', 'Failed to save basic information');
@@ -118,8 +119,6 @@ export const useOnboarding = (): UseOnboardingReturn => {
 
       console.log('Professional info saved locally:', data);
       
-      // Move to next step
-      setCurrentStep(2);
     } catch (error) {
       console.error('Error saving professional info:', error);
       Alert.alert('Error', 'Failed to save professional information');
@@ -129,6 +128,7 @@ export const useOnboarding = (): UseOnboardingReturn => {
     }
   }, []);
 
+  // Submit verification information and complete onboarding
   const submitVerificationInfo = useCallback(
     async (data: VerificationInfoStep) => {
       try {
@@ -206,42 +206,15 @@ export const useOnboarding = (): UseOnboardingReturn => {
     [onboardingData]
   );
 
-  // Navigation helpers
-  const goToNextStep = useCallback(() => {
-    if (currentStep < 2) {
-      setCurrentStep((prev) => prev + 1);
-    }
-  }, [currentStep]);
 
-  const goToPreviousStep = useCallback(() => {
-    if (currentStep > 0) {
-      setCurrentStep((prev) => prev - 1);
-    }
-  }, [currentStep]);
 
-  const resetOnboarding = useCallback(() => {
-    setCurrentStep(0);
-    setOnboardingData({
-      profile: {
-        role: 'handyman',
-        country: 'Ghana',
-      },
-      handymanProfile: {
-        service_radius_km: 10,
-        certified: false,
-      },
-    });
-  }, []);
+
 
   return {
-    currentStep,
     isSubmitting,
     onboardingData,
     submitBasicInfo,
     submitProfessionalInfo,
     submitVerificationInfo,
-    goToNextStep,
-    goToPreviousStep,
-    resetOnboarding,
   };
 };

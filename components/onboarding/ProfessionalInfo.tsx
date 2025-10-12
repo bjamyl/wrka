@@ -41,11 +41,13 @@ type FormData = yup.InferType<typeof schema>;
 interface ProfessionalInfoProps {
   onSubmit?: (data: FormData) => void | Promise<void>;
   isSubmitting?: boolean;
+  goToPreviousStep: () => void;
 }
 
 export default function ProfessionalInfo({
   onSubmit: onSubmitProp,
   isSubmitting = false,
+  goToPreviousStep,
 }: ProfessionalInfoProps) {
   const [locationLoading, setLocationLoading] = useState(false);
   const [locationStatus, setLocationStatus] = useState<string>("");
@@ -245,7 +247,7 @@ export default function ProfessionalInfo({
         ) : null}
       </View>
 
-      <View className="mt-4">
+      <VStack space={"lg"} className="mt-4">
         <Button
           className="w-full rounded-full h-14 bg-black"
           onPress={handleSubmit(onSubmit)}
@@ -259,7 +261,14 @@ export default function ProfessionalInfo({
             </ButtonText>
           )}
         </Button>
-      </View>
+        <Button
+          onPress={goToPreviousStep}
+          variant="outline"
+          className="rounded-full h-14"
+        >
+          <ButtonText>Back</ButtonText>
+        </Button>
+      </VStack>
     </VStack>
   );
 }

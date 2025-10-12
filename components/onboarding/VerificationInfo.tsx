@@ -10,7 +10,6 @@ import { HStack } from "@/components/ui/hstack";
 import { Input, InputField } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { VStack } from "@/components/ui/vstack";
-import { useOnboarding } from "@/hooks/useOnboarding";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as DocumentPicker from "expo-document-picker";
 import { useState } from "react";
@@ -45,16 +44,17 @@ type FormData = yup.InferType<typeof schema>;
 interface VerificationInfoProps {
   onSubmit?: (data: FormData & { certificates: any[] }) => void | Promise<void>;
   isSubmitting?: boolean;
+  goToPreviousStep: () => void;
 }
 
 export default function VerificationInfo({
   onSubmit: onSubmitProp,
   isSubmitting = false,
+  goToPreviousStep
 }: VerificationInfoProps) {
   const [showIdDropdown, setShowIdDropdown] = useState(false);
   const [addCertificates, setAddCertificates] = useState(false);
   const [certificates, setCertificates] = useState<any[]>([]);
-  const { goToPreviousStep } = useOnboarding();
 
   const {
     control,
@@ -292,7 +292,7 @@ export default function VerificationInfo({
           )}
         </Button>
         <Button
-          onPress={() => goToPreviousStep}
+          onPress={goToPreviousStep}
           variant="outline"
           className="rounded-full h-14"
         >
