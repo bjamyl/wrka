@@ -1,8 +1,9 @@
-import { useState, useCallback } from 'react';
-import { Alert } from 'react-native';
-import { uploadCertificates } from '../lib/cloudinary';
-import { supabase } from '../lib/supabase'; 
-import type { Certificate } from '../lib/cloudinary';
+import { useState, useCallback } from "react";
+import { Alert } from "react-native";
+import { uploadCertificates } from "../lib/cloudinary";
+import { supabase } from "../lib/supabase";
+import type { Certificate } from "../lib/cloudinary";
+import { useRouter } from "expo-router";
 
 export type ProfileData = {
   full_name: string;
@@ -15,7 +16,7 @@ export type ProfileData = {
   id_type: string;
   id_number: string;
   avatar_url?: string;
-  role: 'customer' | 'handyman';
+  role: "customer" | "handyman";
 };
 
 export type HandymanProfileData = {
@@ -26,20 +27,20 @@ export type HandymanProfileData = {
   location_lng?: number;
   service_radius_km?: number;
   certified: boolean;
-  certificates?: Certificate[]; 
+  certificates?: Certificate[];
 };
 
 type BasicInfoStep = Pick<
   ProfileData,
-  'full_name' | 'phone_number' | 'city' | 'region' | 'district' | 'country'
+  "full_name" | "phone_number" | "city" | "region" | "district" | "country"
 >;
 
 type ProfessionalInfoStep = Pick<
   HandymanProfileData,
-  'bio' | 'years_experience' | 'hourly_rate' | 'location_lat' | 'location_lng'
+  "bio" | "years_experience" | "hourly_rate" | "location_lat" | "location_lng"
 >;
 
-type VerificationInfoStep = Pick<ProfileData, 'id_type' | 'id_number'> & {
+type VerificationInfoStep = Pick<ProfileData, "id_type" | "id_number"> & {
   certificates?: File[] | { uri: string; name: string; type: string }[];
 };
 
@@ -58,12 +59,13 @@ type UseOnboardingReturn = {
 };
 
 export const useOnboarding = (): UseOnboardingReturn => {
+  const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [onboardingData, setOnboardingData] = useState<OnboardingData>({
     profile: {
-      role: 'handyman',
-      country: 'Ghana',
+      role: "handyman",
+      country: "Ghana",
     },
     handymanProfile: {
       service_radius_km: 10,
@@ -74,41 +76,42 @@ export const useOnboarding = (): UseOnboardingReturn => {
   const submitBasicInfo = useCallback(async (data: BasicInfoStep) => {
     try {
       setIsSubmitting(true);
-      
+
       setOnboardingData((prev) => ({
         ...prev,
         profile: { ...prev.profile, ...data },
       }));
 
-      console.log('Basic info saved locally:', data);
-      
+      console.log("Basic info saved locally:", data);
     } catch (error) {
-      console.error('Error saving basic info:', error);
-      Alert.alert('Error', 'Failed to save basic information');
+      console.error("Error saving basic info:", error);
+      Alert.alert("Error", "Failed to save basic information");
       throw error;
     } finally {
       setIsSubmitting(false);
     }
   }, []);
 
-  const submitProfessionalInfo = useCallback(async (data: ProfessionalInfoStep) => {
-    try {
-      setIsSubmitting(true);
-      setOnboardingData((prev) => ({
-        ...prev,
-        handymanProfile: { ...prev.handymanProfile, ...data },
-      }));
+  const submitProfessionalInfo = useCallback(
+    async (data: ProfessionalInfoStep) => {
+      try {
+        setIsSubmitting(true);
+        setOnboardingData((prev) => ({
+          ...prev,
+          handymanProfile: { ...prev.handymanProfile, ...data },
+        }));
 
-      console.log('Professional info saved locally:', data);
-      
-    } catch (error) {
-      console.error('Error saving professional info:', error);
-      Alert.alert('Error', 'Failed to save professional information');
-      throw error;
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, []);
+        console.log("Professional info saved locally:", data);
+      } catch (error) {
+        console.error("Error saving professional info:", error);
+        Alert.alert("Error", "Failed to save professional information");
+        throw error;
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [],
+  );
 
   const submitVerificationInfo = useCallback(
     async (data: VerificationInfoStep) => {
@@ -118,10 +121,10 @@ export const useOnboarding = (): UseOnboardingReturn => {
 
         let uploadedCertificates: Certificate[] = [];
         if (data.certificates?.length) {
-          Alert.alert('Uploading', 'Uploading your certificates...');
+          Alert.alert("Uploading", "Uploading your certificates...");
           uploadedCertificates = await uploadCertificates(
             data.certificates,
-            setUploadProgress
+            setUploadProgress,
           );
         }
 
@@ -138,15 +141,18 @@ export const useOnboarding = (): UseOnboardingReturn => {
         };
 
         // Get the current user
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
-        
+        const {
+          data: { user },
+          error: userError,
+        } = await supabase.auth.getUser();
+
         if (userError || !user) {
-          throw new Error('No authenticated user found');
+          throw new Error("No authenticated user found");
         }
 
         // Step 1: Upsert profile data
         const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
+          .from("profiles")
           .upsert({
             id: user.id,
             ...completeProfileData,
@@ -156,36 +162,38 @@ export const useOnboarding = (): UseOnboardingReturn => {
           .single();
 
         if (profileError) {
-          console.error('Profile error:', profileError);
+          console.error("Profile error:", profileError);
           throw new Error(`Failed to save profile: ${profileError.message}`);
         }
 
         const { data: existingHandyman } = await supabase
-          .from('handyman_profiles')
-          .select('id')
-          .eq('profile_id', user.id)
+          .from("handyman_profiles")
+          .select("id")
+          .eq("profile_id", user.id)
           .single();
 
         let handymanData;
         if (existingHandyman) {
           const { data, error: handymanError } = await supabase
-            .from('handyman_profiles')
+            .from("handyman_profiles")
             .update({
               ...completeHandymanData,
               certificates: uploadedCertificates,
             })
-            .eq('profile_id', user.id)
+            .eq("profile_id", user.id)
             .select()
             .single();
 
           if (handymanError) {
-            console.error('Handyman update error:', handymanError);
-            throw new Error(`Failed to update handyman profile: ${handymanError.message}`);
+            console.error("Handyman update error:", handymanError);
+            throw new Error(
+              `Failed to update handyman profile: ${handymanError.message}`,
+            );
           }
           handymanData = data;
         } else {
           const { data, error: handymanError } = await supabase
-            .from('handyman_profiles')
+            .from("handyman_profiles")
             .insert({
               ...completeHandymanData,
               profile_id: user.id,
@@ -195,24 +203,29 @@ export const useOnboarding = (): UseOnboardingReturn => {
             .single();
 
           if (handymanError) {
-            console.error('Handyman insert error:', handymanError);
-            throw new Error(`Failed to create handyman profile: ${handymanError.message}`);
+            console.error("Handyman insert error:", handymanError);
+            throw new Error(
+              `Failed to create handyman profile: ${handymanError.message}`,
+            );
           }
           handymanData = data;
         }
 
-        console.log('Profile created/updated successfully:', { profileData, handymanData });
+        console.log("Profile created/updated successfully:", {
+          profileData,
+          handymanData,
+        });
 
-        Alert.alert(
-          'Success',
-          'Your profile has been created successfully!',
-          [{ text: 'OK', onPress: () => console.log('Navigate to home') }]
-        );
+        Alert.alert("Success", "Your profile has been created successfully!", [
+          { text: "OK", onPress: () => router.push("/(tabs)") },
+        ]);
       } catch (error) {
-        console.error('Error completing onboarding:', error);
+        console.error("Error completing onboarding:", error);
         Alert.alert(
-          'Error',
-          error instanceof Error ? error.message : 'Failed to complete onboarding. Please try again.'
+          "Error",
+          error instanceof Error
+            ? error.message
+            : "Failed to complete onboarding. Please try again.",
         );
         throw error;
       } finally {
@@ -220,7 +233,7 @@ export const useOnboarding = (): UseOnboardingReturn => {
         setUploadProgress(0);
       }
     },
-    [onboardingData]
+    [onboardingData],
   );
 
   return {
