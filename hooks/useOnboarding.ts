@@ -1,17 +1,9 @@
 import { useState, useCallback } from 'react';
 import { Alert } from 'react-native';
+import { uploadCertificates } from '../lib/cloudinary';
+import { supabase } from '../lib/supabase'; 
+import type { Certificate } from '../lib/cloudinary';
 
-// Certificate type for Cloudinary references (stored as JSONB)
-export type Certificate = {
-  name: string;
-  url: string;
-  cloudinary_public_id: string;
-  uploaded_at: string;
-  file_type: string;
-  size: number;
-};
-
-// Types based on your database schema
 export type ProfileData = {
   full_name: string;
   phone_number: string;
@@ -37,7 +29,6 @@ export type HandymanProfileData = {
   certificates?: Certificate[]; 
 };
 
-// Partial types for each step
 type BasicInfoStep = Pick<
   ProfileData,
   'full_name' | 'phone_number' | 'city' | 'region' | 'district' | 'country'
@@ -49,18 +40,17 @@ type ProfessionalInfoStep = Pick<
 >;
 
 type VerificationInfoStep = Pick<ProfileData, 'id_type' | 'id_number'> & {
-  certificates?: HandymanProfileData['certificates'];
+  certificates?: File[] | { uri: string; name: string; type: string }[];
 };
 
-// Combined onboarding data
 export type OnboardingData = {
   profile: Partial<ProfileData>;
   handymanProfile: Partial<HandymanProfileData>;
 };
 
-
 type UseOnboardingReturn = {
   isSubmitting: boolean;
+  uploadProgress: number;
   onboardingData: OnboardingData;
   submitBasicInfo: (data: BasicInfoStep) => Promise<void>;
   submitProfessionalInfo: (data: ProfessionalInfoStep) => Promise<void>;
@@ -69,9 +59,10 @@ type UseOnboardingReturn = {
 
 export const useOnboarding = (): UseOnboardingReturn => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [onboardingData, setOnboardingData] = useState<OnboardingData>({
     profile: {
-      role: 'handyman', // Default role, can be changed
+      role: 'handyman',
       country: 'Ghana',
     },
     handymanProfile: {
@@ -80,18 +71,13 @@ export const useOnboarding = (): UseOnboardingReturn => {
     },
   });
 
-  // Submit basic information
   const submitBasicInfo = useCallback(async (data: BasicInfoStep) => {
     try {
       setIsSubmitting(true);
       
-      // Update the profile data
       setOnboardingData((prev) => ({
         ...prev,
-        profile: {
-          ...prev.profile,
-          ...data,
-        },
+        profile: { ...prev.profile, ...data },
       }));
 
       console.log('Basic info saved locally:', data);
@@ -105,16 +91,12 @@ export const useOnboarding = (): UseOnboardingReturn => {
     }
   }, []);
 
-  // Submit professional information
   const submitProfessionalInfo = useCallback(async (data: ProfessionalInfoStep) => {
     try {
       setIsSubmitting(true);
       setOnboardingData((prev) => ({
         ...prev,
-        handymanProfile: {
-          ...prev.handymanProfile,
-          ...data,
-        },
+        handymanProfile: { ...prev.handymanProfile, ...data },
       }));
 
       console.log('Professional info saved locally:', data);
@@ -128,90 +110,122 @@ export const useOnboarding = (): UseOnboardingReturn => {
     }
   }, []);
 
-  // Submit verification information and complete onboarding
   const submitVerificationInfo = useCallback(
     async (data: VerificationInfoStep) => {
       try {
         setIsSubmitting(true);
+        setUploadProgress(0);
 
-        // Build the complete profile data
+        let uploadedCertificates: Certificate[] = [];
+        if (data.certificates?.length) {
+          Alert.alert('Uploading', 'Uploading your certificates...');
+          uploadedCertificates = await uploadCertificates(
+            data.certificates,
+            setUploadProgress
+          );
+        }
+
         const completeProfileData: Partial<ProfileData> = {
           ...onboardingData.profile,
           id_type: data.id_type,
           id_number: data.id_number,
         };
 
-        // Build the complete handyman profile data
         const completeHandymanData: Partial<HandymanProfileData> = {
           ...onboardingData.handymanProfile,
-          certified: data.certificates && data.certificates.length > 0,
-          certificates: data.certificates || [],
+          certified: uploadedCertificates.length > 0,
+          certificates: uploadedCertificates,
         };
 
-        console.log('Complete Profile Data:', completeProfileData);
-        console.log('Complete Handyman Profile Data:', completeHandymanData);
-
-        // TODO: Upload certificates to storage first if any
-        let certificateUrls: string[] = [];
-        if (data.certificates && data.certificates.length > 0) {
-          // certificateUrls = await uploadCertificates(data.certificates);
-          console.log('Certificates to upload:', data.certificates);
+        // Get the current user
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        
+        if (userError || !user) {
+          throw new Error('No authenticated user found');
         }
 
-        // TODO: Submit to Supabase
-        // const { data: profileData, error: profileError } = await supabase
-        //   .from('profiles')
-        //   .upsert(completeProfileData)
-        //   .select()
-        //   .single();
+        // Step 1: Upsert profile data
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .upsert({
+            id: user.id,
+            ...completeProfileData,
+            updated_at: new Date().toISOString(),
+          })
+          .select()
+          .single();
 
-        // if (profileError) throw profileError;
+        if (profileError) {
+          console.error('Profile error:', profileError);
+          throw new Error(`Failed to save profile: ${profileError.message}`);
+        }
 
-        // const { data: handymanData, error: handymanError } = await supabase
-        //   .from('handyman_profiles')
-        //   .insert({
-        //     ...completeHandymanData,
-        //     profile_id: profileData.id,
-        //     certificates: certificateUrls,
-        //   })
-        //   .select()
-        //   .single();
+        const { data: existingHandyman } = await supabase
+          .from('handyman_profiles')
+          .select('id')
+          .eq('profile_id', user.id)
+          .single();
 
-        // if (handymanError) throw handymanError;
+        let handymanData;
+        if (existingHandyman) {
+          const { data, error: handymanError } = await supabase
+            .from('handyman_profiles')
+            .update({
+              ...completeHandymanData,
+              certificates: uploadedCertificates,
+            })
+            .eq('profile_id', user.id)
+            .select()
+            .single();
+
+          if (handymanError) {
+            console.error('Handyman update error:', handymanError);
+            throw new Error(`Failed to update handyman profile: ${handymanError.message}`);
+          }
+          handymanData = data;
+        } else {
+          const { data, error: handymanError } = await supabase
+            .from('handyman_profiles')
+            .insert({
+              ...completeHandymanData,
+              profile_id: user.id,
+              certificates: uploadedCertificates,
+            })
+            .select()
+            .single();
+
+          if (handymanError) {
+            console.error('Handyman insert error:', handymanError);
+            throw new Error(`Failed to create handyman profile: ${handymanError.message}`);
+          }
+          handymanData = data;
+        }
+
+        console.log('Profile created/updated successfully:', { profileData, handymanData });
 
         Alert.alert(
           'Success',
           'Your profile has been created successfully!',
-          [
-            {
-              text: 'OK',
-              onPress: () => {
-                // TODO: Navigate to home screen or dashboard
-                console.log('Navigate to home');
-              },
-            },
-          ]
+          [{ text: 'OK', onPress: () => console.log('Navigate to home') }]
         );
       } catch (error) {
         console.error('Error completing onboarding:', error);
         Alert.alert(
           'Error',
-          'Failed to complete onboarding. Please try again.'
+          error instanceof Error ? error.message : 'Failed to complete onboarding. Please try again.'
         );
         throw error;
       } finally {
         setIsSubmitting(false);
+        setUploadProgress(0);
       }
     },
     [onboardingData]
   );
 
-
-
-
-
   return {
     isSubmitting,
+    uploadProgress,
     onboardingData,
     submitBasicInfo,
     submitProfessionalInfo,

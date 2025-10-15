@@ -25,7 +25,7 @@ const OTPForm = () => {
 
     if (data?.session) {
       Alert.alert("Success", "Email verified successfully!");
-      router.replace("/(tabs)");
+      router.replace("/onboarding");
     }
   };
 

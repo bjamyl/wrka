@@ -112,7 +112,11 @@ export default function Onboarding() {
             >
               <ProfessionalInfo
                 onSubmit={async (data) => {
-                  await submitProfessionalInfo(data);
+                  await submitProfessionalInfo({
+                    ...data,
+                    location_lat: data.location_lat !== undefined ? Number(data.location_lat) : undefined,
+                    location_lng: data.location_lng !== undefined ? Number(data.location_lng) : undefined,
+                  });
                   goToNextStep();
                 }}
                 goToPreviousStep={goToPreviousStep}

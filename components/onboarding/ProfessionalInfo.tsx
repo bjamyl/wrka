@@ -32,8 +32,8 @@ const schema = yup.object().shape({
     .required("Hourly rate is required")
     .positive("Must be a positive number")
     .typeError("Must be a number"),
-  latitude: yup.string().optional(),
-  longitude: yup.string().optional(),
+  location_lat: yup.string().optional(),
+  location_lng: yup.string().optional(),
 });
 
 type FormData = yup.InferType<typeof schema>;
@@ -63,8 +63,8 @@ export default function ProfessionalInfo({
       bio: "",
       years_experience: 0,
       hourly_rate: 0,
-      latitude: "",
-      longitude: "",
+      location_lat: "",
+      location_lng: "",
     },
   });
 
@@ -74,7 +74,6 @@ export default function ProfessionalInfo({
         setLocationLoading(true);
         setLocationStatus("Requesting location permission...");
 
-        // Request location permissions
         let { status } = await Location.requestForegroundPermissionsAsync();
 
         if (status !== "granted") {
@@ -90,14 +89,12 @@ export default function ProfessionalInfo({
 
         setLocationStatus("Getting your location...");
 
-        // Get current location
         let location = await Location.getCurrentPositionAsync({
           accuracy: Location.Accuracy.Balanced,
         });
 
-        // Set the latitude and longitude in the form
-        setValue("latitude", location.coords.latitude.toString());
-        setValue("longitude", location.coords.longitude.toString());
+        setValue("location_lat", location.coords.latitude.toString());
+        setValue("location_lng", location.coords.longitude.toString());
 
         setLocationStatus("Location captured successfully ✓");
       } catch (error) {
@@ -120,7 +117,6 @@ export default function ProfessionalInfo({
     if (onSubmitProp) {
       onSubmitProp(data);
     }
-    // Handle form submission here
   };
 
   return (
@@ -240,7 +236,7 @@ export default function ProfessionalInfo({
         ) : (
           <Text className="text-sm text-gray-600">{locationStatus}</Text>
         )}
-        {errors.latitude || errors.longitude ? (
+        {errors.location_lng || errors.location_lat ? (
           <Text className="text-sm text-red-500 mt-1">
             Location is required to continue
           </Text>

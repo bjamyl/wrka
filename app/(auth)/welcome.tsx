@@ -12,7 +12,6 @@ export default function Welcome() {
   return (
     <SafeAreaView className="flex-1 bg-white">
       <View className="flex-1 px-6 pt-5 pb-10">
-        {/* Logo */}
         <View className="mb-10">
           <Text className="text-3xl font-bold text-black">wrka.</Text>
         </View>
@@ -59,22 +58,13 @@ export default function Welcome() {
             size="lg" 
             variant="outline"
             className="border border-gray-200 rounded-full h-14"
-            onPress={() => {router.push('/verify-email')}}
+            onPress={() => {router.push('/login')}}
           >
             <ButtonText className="text-base font-semibold text-black">
               Log in
             </ButtonText>
           </Button>
-          <Button 
-            size="lg" 
-            variant="outline"
-            className="border border-gray-200 rounded-full h-14"
-            onPress={() => {router.push('/onboarding')}}
-          >
-            <ButtonText className="text-base font-semibold text-black">
-              Onboarding
-            </ButtonText>
-          </Button>
+
         </VStack>
       </View>
 
