@@ -33,7 +33,9 @@ export default function LoginForm() {
       <VStack space="lg" className="mb-6">
         {/* Email Input */}
         <VStack space="xs">
-          <Text className="text-sm font-dmsans-medium text-gray-700 mb-1">Email</Text>
+          <Text className="text-sm font-dmsans-medium text-gray-700 mb-1">
+            Email
+          </Text>
           <Input className="border border-gray-300 rounded-xl h-14">
             <InputField
               placeholder="Enter your email"
@@ -87,9 +89,13 @@ export default function LoginForm() {
 
       {/* Login Link */}
       <View className="flex-row justify-center items-center">
-        <Text className="text-gray-600 font-dmsans">Don&apos;t have an account? </Text>
+        <Text className="text-gray-600 font-dmsans">
+          Don&apos;t have an account?{" "}
+        </Text>
         <TouchableOpacity onPress={() => router.replace("/(auth)/signup")}>
-          <Text className="text-black font-semibold font-dmsans-bold">Sign up</Text>
+          <Text className="text-black font-semibold font-dmsans-bold">
+            Sign up
+          </Text>
         </TouchableOpacity>
       </View>
     </>
