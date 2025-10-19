@@ -1,18 +1,73 @@
-import React from "react";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { ScrollView, View, TouchableOpacity, Alert } from "react-native";
-import { Heading } from "@/components/ui/heading";
-import { Text } from "@/components/ui/text";
+import {
+  Actionsheet,
+  ActionsheetBackdrop,
+  ActionsheetContent,
+  ActionsheetDragIndicator,
+  ActionsheetDragIndicatorWrapper,
+} from "@/components/ui/actionsheet";
 import { Button, ButtonText } from "@/components/ui/button";
-import { VStack } from "@/components/ui/vstack";
+import { Heading } from "@/components/ui/heading";
 import { HStack } from "@/components/ui/hstack";
+import { Input, InputField, InputSlot } from "@/components/ui/input";
+import { Text } from "@/components/ui/text";
+import { VStack } from "@/components/ui/vstack";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "expo-router";
-import { ArrowLeft, LogOut, Lock, Key, Shield, Smartphone } from "lucide-react-native";
+import { ArrowLeft, Eye, EyeOff, Key, Lock, LogOut, Shield, Smartphone } from "lucide-react-native";
+import React, { useState } from "react";
+import { ActivityIndicator, Alert, ScrollView, TouchableOpacity, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Security() {
-  const { logout } = useAuth();
+  const { logout, changePassword, loading } = useAuth();
   const router = useRouter();
+
+  const [showPasswordSheet, setShowPasswordSheet] = useState(false);
+  console.log('show password sheet', showPasswordSheet)
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleChangePassword = async () => {
+    // Validation
+    if (!newPassword || !confirmPassword) {
+      Alert.alert("Error", "Please fill in all fields");
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      Alert.alert("Error", "Password must be at least 6 characters long");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      Alert.alert("Error", "Passwords do not match");
+      return;
+    }
+
+    setIsSubmitting(true);
+    const { error } = await changePassword(newPassword);
+    setIsSubmitting(false);
+
+    if (!error) {
+      Alert.alert(
+        "Success",
+        "Your password has been changed successfully",
+        [
+          {
+            text: "OK",
+            onPress: () => {
+              setShowPasswordSheet(false);
+              setNewPassword("");
+              setConfirmPassword("");
+            },
+          },
+        ]
+      );
+    }
+  };
 
   const handleLogout = () => {
     Alert.alert(
@@ -52,7 +107,7 @@ export default function Security() {
   }) => (
     <TouchableOpacity
       onPress={onPress}
-      className={`bg-white rounded-2xl border p-4 mb-3 active:bg-gray-50 ${
+      className={`bg-white rounded-2xl border p-4 mb-3  ${
         variant === "danger" ? "border-red-200" : "border-gray-200"
       }`}
     >
@@ -117,10 +172,7 @@ export default function Security() {
                 icon={Lock}
                 title="Change Password"
                 description="Update your account password"
-                onPress={() => {
-                  // TODO: Navigate to change password page
-                  alert("Change password coming soon!");
-                }}
+                onPress={() => setShowPasswordSheet(true)}
               />
 
               <SecurityOption
@@ -180,6 +232,113 @@ export default function Security() {
           </VStack>
         </View>
       </ScrollView>
+
+     
+      <Actionsheet isOpen={showPasswordSheet} onClose={() => setShowPasswordSheet(false)}>
+        <ActionsheetBackdrop />
+        <ActionsheetContent className="pb-8">
+          <ActionsheetDragIndicatorWrapper>
+            <ActionsheetDragIndicator />
+          </ActionsheetDragIndicatorWrapper>
+
+          <View className="w-full px-4 mt-4">
+            <Heading size="lg" className="text-gray-900 font-dmsans-bold mb-2">
+              Change Password
+            </Heading>
+            <Text size="sm" className="text-gray-600 font-dmsans mb-6">
+              Create a new password for your account
+            </Text>
+
+            <VStack space="lg">
+              {/* New Password Field */}
+              <VStack space="xs">
+                <Text size="sm" className="text-gray-700 font-dmsans-medium mb-1">
+                  New Password
+                </Text>
+                <Input variant="outline" size="lg" className="border-gray-300 rounded-xl">
+                  <InputField
+                    type={showNewPassword ? "text" : "password"}
+                    placeholder="Enter new password"
+                    value={newPassword}
+                    onChangeText={setNewPassword}
+                    className="font-dmsans"
+                  />
+                  <InputSlot className="pr-3" onPress={() => setShowNewPassword(!showNewPassword)}>
+                    {showNewPassword ? (
+                      <EyeOff size={20} color="#6B7280" />
+                    ) : (
+                      <Eye size={20} color="#6B7280" />
+                    )}
+                  </InputSlot>
+                </Input>
+              </VStack>
+
+              {/* Confirm Password Field */}
+              <VStack space="xs">
+                <Text size="sm" className="text-gray-700 font-dmsans-medium mb-1">
+                  Confirm Password
+                </Text>
+                <Input variant="outline" size="lg" className="border-gray-300 rounded-xl">
+                  <InputField
+                    type={showConfirmPassword ? "text" : "password"}
+                    placeholder="Confirm new password"
+                    value={confirmPassword}
+                    onChangeText={setConfirmPassword}
+                    className="font-dmsans"
+                  />
+                  <InputSlot className="pr-3" onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
+                    {showConfirmPassword ? (
+                      <EyeOff size={20} color="#6B7280" />
+                    ) : (
+                      <Eye size={20} color="#6B7280" />
+                    )}
+                  </InputSlot>
+                </Input>
+              </VStack>
+
+              {/* Password Requirements */}
+              <View className="bg-gray-50 rounded-lg p-3">
+                <Text size="xs" className="text-gray-600 font-dmsans">
+                  Password must be at least 6 characters long
+                </Text>
+              </View>
+
+              {/* Action Buttons */}
+              <HStack space="sm" className="mt-2">
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="flex-1 rounded-full border-gray-300"
+                  onPress={() => {
+                    setShowPasswordSheet(false);
+                    setNewPassword("");
+                    setConfirmPassword("");
+                  }}
+                  disabled={isSubmitting}
+                >
+                  <ButtonText className="text-gray-700 font-dmsans-bold">
+                    Cancel
+                  </ButtonText>
+                </Button>
+                <Button
+                  size="lg"
+                  className="flex-1 bg-black rounded-full"
+                  onPress={handleChangePassword}
+                  disabled={isSubmitting || !newPassword || !confirmPassword}
+                >
+                  {isSubmitting ? (
+                    <ActivityIndicator color="#FFF" />
+                  ) : (
+                    <ButtonText className="text-white font-dmsans-bold">
+                      Update Password
+                    </ButtonText>
+                  )}
+                </Button>
+              </HStack>
+            </VStack>
+          </View>
+        </ActionsheetContent>
+      </Actionsheet>
     </SafeAreaView>
   );
 }

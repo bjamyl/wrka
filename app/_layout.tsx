@@ -1,17 +1,17 @@
+import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
+import "@/global.css";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import {
   DarkTheme,
   DefaultTheme,
   ThemeProvider,
 } from "@react-navigation/native";
-import { Stack } from "expo-router";
-import { StatusBar } from "expo-status-bar";
 import { useFonts } from "expo-font"; // For custom fonts
+import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
+import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import "react-native-reanimated";
-import { useColorScheme } from "@/hooks/use-color-scheme";
-import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
-import "@/global.css";
 
 // Keep splash screen visible while loading fonts
 SplashScreen.preventAutoHideAsync();

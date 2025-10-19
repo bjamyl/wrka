@@ -1,16 +1,16 @@
-import React from "react";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { ScrollView, View, ActivityIndicator, TouchableOpacity, RefreshControl, Linking } from "react-native";
-import { Heading } from "@/components/ui/heading";
-import { Text } from "@/components/ui/text";
 import { Button, ButtonText } from "@/components/ui/button";
-import { VStack } from "@/components/ui/vstack";
+import { Heading } from "@/components/ui/heading";
 import { HStack } from "@/components/ui/hstack";
 import { Switch } from "@/components/ui/switch";
+import { Text } from "@/components/ui/text";
+import { VStack } from "@/components/ui/vstack";
 import { useHandymanProfile } from "@/hooks/useHandymanProfile";
-import { useRouter } from "expo-router";
-import { ArrowLeft, Star, DollarSign, Clock, MapPin, CheckCircle, Award, Shield, FileText, Download } from "lucide-react-native";
 import { Certificate } from "@/types/profile";
+import { useRouter } from "expo-router";
+import { ArrowLeft, Award, CheckCircle, Clock, DollarSign, Download, FileText, MapPin, Shield, Star, XCircle } from "lucide-react-native";
+import React from "react";
+import { ActivityIndicator, Linking, RefreshControl, ScrollView, TouchableOpacity, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function HandymanProfile() {
   const { handymanProfile, loading, updating, refetch, updateAvailability } = useHandymanProfile();
@@ -107,7 +107,7 @@ export default function HandymanProfile() {
             No Handyman Profile
           </Text>
           <Text size="sm" className="text-gray-600 text-center mt-2 font-dmsans">
-            You haven't set up your handyman profile yet. Create one to start accepting jobs.
+            You haven&apos;t set up your handyman profile yet. Create one to start accepting jobs.
           </Text>
           <Button
             size="lg"

@@ -1,6 +1,6 @@
-import JobDetailsBottomSheet from "@/components/jobs/JobDetailsBottomSheet";
 import { Heading } from "@/components/ui/heading";
 import { Text } from "@/components/ui/text";
+import { useRouter } from "expo-router";
 import {
   Clock,
   DollarSign,
@@ -11,7 +11,7 @@ import {
   Star,
   TrendingUp,
   Wrench,
-  Zap
+  Zap,
 } from "lucide-react-native";
 import React, { useState } from "react";
 import { ScrollView, Switch, TouchableOpacity, View } from "react-native";
@@ -19,10 +19,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 // Dummy data
 const HANDYMAN_STATS = {
-  todayEarnings: 245.50,
+  todayEarnings: 245.5,
   activeJobs: 2,
   rating: 4.8,
-  completedJobs: 127
+  completedJobs: 127,
 };
 
 const JOB_CATEGORIES = [
@@ -38,8 +38,10 @@ const NEARBY_JOBS = [
     id: "1",
     title: "Fix Leaking Kitchen Sink",
     category: "plumbing",
-    description: "Kitchen sink has been leaking for 2 days. Need urgent repair.",
-    fullDescription: "My kitchen sink has been leaking under the cabinet for about 2 days now. The leak seems to be coming from the pipe connections. There's water damage on the cabinet floor and I'm worried it will get worse. I need someone who can come and fix this as soon as possible.",
+    description:
+      "Kitchen sink has been leaking for 2 days. Need urgent repair.",
+    fullDescription:
+      "My kitchen sink has been leaking under the cabinet for about 2 days now. The leak seems to be coming from the pipe connections. There's water damage on the cabinet floor and I'm worried it will get worse. I need someone who can come and fix this as soon as possible.",
     payment: 85,
     distance: "1.2 km",
     timeAgo: "5 min ago",
@@ -52,15 +54,20 @@ const NEARBY_JOBS = [
       rating: 4.9,
       completedJobs: 23,
     },
-    requirements: ["Basic plumbing tools", "Pipe sealant/tape", "Replacement parts if needed"],
-    photos: []
+    requirements: [
+      "Basic plumbing tools",
+      "Pipe sealant/tape",
+      "Replacement parts if needed",
+    ],
+    photos: [],
   },
   {
     id: "2",
     title: "Install Ceiling Fan",
     category: "electrical",
     description: "Need to install a new ceiling fan in living room.",
-    fullDescription: "I just bought a new ceiling fan for my living room and need help installing it. The fan is already unboxed and ready. There's an existing light fixture that needs to be removed first. The ceiling has a standard electrical box installed.",
+    fullDescription:
+      "I just bought a new ceiling fan for my living room and need help installing it. The fan is already unboxed and ready. There's an existing light fixture that needs to be removed first. The ceiling has a standard electrical box installed.",
     payment: 120,
     distance: "2.8 km",
     timeAgo: "15 min ago",
@@ -74,14 +81,15 @@ const NEARBY_JOBS = [
       completedJobs: 15,
     },
     requirements: ["Electrical tools", "Ladder", "Wire connectors"],
-    photos: []
+    photos: [],
   },
   {
     id: "3",
     title: "Paint Bedroom Walls",
     category: "painting",
     description: "Two bedroom walls need fresh coat of paint.",
-    fullDescription: "Looking for someone to paint two walls in my bedroom. The walls are currently white and I want them painted in a light gray color. I have the paint ready. Walls are about 10x8 feet each. Some minor wall prep might be needed.",
+    fullDescription:
+      "Looking for someone to paint two walls in my bedroom. The walls are currently white and I want them painted in a light gray color. I have the paint ready. Walls are about 10x8 feet each. Some minor wall prep might be needed.",
     payment: 200,
     distance: "3.5 km",
     timeAgo: "1 hour ago",
@@ -94,15 +102,20 @@ const NEARBY_JOBS = [
       rating: 4.8,
       completedJobs: 31,
     },
-    requirements: ["Painting supplies (brushes, rollers, tape)", "Drop cloths", "Ladder"],
-    photos: []
+    requirements: [
+      "Painting supplies (brushes, rollers, tape)",
+      "Drop cloths",
+      "Ladder",
+    ],
+    photos: [],
   },
   {
     id: "4",
     title: "Repair Wooden Cabinet",
     category: "carpentry",
     description: "Kitchen cabinet door is broken and needs repair.",
-    fullDescription: "One of my kitchen cabinet doors came off its hinges. The hinge screws pulled out of the wood and left holes. The door itself is fine, but I need the hinge area repaired properly so the door can be reattached securely.",
+    fullDescription:
+      "One of my kitchen cabinet doors came off its hinges. The hinge screws pulled out of the wood and left holes. The door itself is fine, but I need the hinge area repaired properly so the door can be reattached securely.",
     payment: 95,
     distance: "1.8 km",
     timeAgo: "2 hours ago",
@@ -116,50 +129,48 @@ const NEARBY_JOBS = [
       completedJobs: 8,
     },
     requirements: ["Wood filler or dowels", "Drill", "New hinges (if needed)"],
-    photos: []
+    photos: [],
   },
 ];
 
 export default function Home() {
+  const router = useRouter();
   const [isAvailable, setIsAvailable] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState("all");
-  const [selectedJob, setSelectedJob] = useState<typeof NEARBY_JOBS[0] | null>(null);
-  const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false);
 
   const getCategoryIcon = (categoryId: string) => {
-    const category = JOB_CATEGORIES.find(c => c.id === categoryId);
+    const category = JOB_CATEGORIES.find((c) => c.id === categoryId);
     return category?.icon || Wrench;
   };
 
   const getCategoryColor = (categoryId: string) => {
-    const category = JOB_CATEGORIES.find(c => c.id === categoryId);
+    const category = JOB_CATEGORIES.find((c) => c.id === categoryId);
     return category?.color || "#6B7280";
   };
 
-  const filteredJobs = selectedCategory === "all"
-    ? NEARBY_JOBS
-    : NEARBY_JOBS.filter(job => job.category === selectedCategory);
+  const filteredJobs =
+    selectedCategory === "all"
+      ? NEARBY_JOBS
+      : NEARBY_JOBS.filter((job) => job.category === selectedCategory);
 
-  const handleJobPress = (job: typeof NEARBY_JOBS[0]) => {
-    setSelectedJob(job);
-    setTimeout(() => setIsBottomSheetOpen(prev => !prev), 0)
+  const handleJobPress = (job: (typeof NEARBY_JOBS)[0]) => {
+    router.push({
+      pathname: "/job-details",
+      params: { job: JSON.stringify(job) },
+    });
   };
 
-  const handleAcceptJob = () => {
-    console.log("Accepting job:", selectedJob?.id);
-    setIsBottomSheetOpen(false);
+  const handleAcceptJob = (job: (typeof NEARBY_JOBS)[0]) => {
+    console.log("Accepting job:", job.id);
     // TODO: Implement accept job logic
   };
 
-  const handleDeclineJob = () => {
-    console.log("Declining job:", selectedJob?.id);
-    setIsBottomSheetOpen(false);
-  };
-
   return (
-    <>
     <SafeAreaView edges={["top"]} className="flex-1 bg-gray-50">
-      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 100 }}>
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{ paddingBottom: 100 }}
+      >
         {/* Header Section */}
         <View className="px-6 py-4 bg-white">
           <View className="flex-row items-center justify-between mb-4">
@@ -172,7 +183,12 @@ export default function Home() {
               </Text>
             </View>
             <View className="flex-row items-center gap-2">
-              <Text size="sm" className={isAvailable ? "text-green-600 font-medium" : "text-gray-500"}>
+              <Text
+                size="sm"
+                className={
+                  isAvailable ? "text-green-600 font-medium" : "text-gray-500"
+                }
+              >
                 {isAvailable ? "Available" : "Offline"}
               </Text>
               <Switch
@@ -189,25 +205,37 @@ export default function Home() {
             <View className="flex-1 bg-gray-50 rounded-2xl p-4">
               <View className="flex-row items-center gap-2 mb-1">
                 <DollarSign size={16} color="#10B981" />
-                <Text size="xs" className="text-gray-600">Today</Text>
+                <Text size="xs" className="text-gray-600">
+                  Today
+                </Text>
               </View>
-              <Heading size="lg" className="text-black">${HANDYMAN_STATS.todayEarnings}</Heading>
+              <Heading size="lg" className="text-black">
+                ${HANDYMAN_STATS.todayEarnings}
+              </Heading>
             </View>
 
             <View className="flex-1 bg-gray-50 rounded-2xl p-4">
               <View className="flex-row items-center gap-2 mb-1">
                 <TrendingUp size={16} color="#3B82F6" />
-                <Text size="xs" className="text-gray-600">Active</Text>
+                <Text size="xs" className="text-gray-600">
+                  Active
+                </Text>
               </View>
-              <Heading size="lg" className="text-black">{HANDYMAN_STATS.activeJobs}</Heading>
+              <Heading size="lg" className="text-black">
+                {HANDYMAN_STATS.activeJobs}
+              </Heading>
             </View>
 
             <View className="flex-1 bg-gray-50 rounded-2xl p-4">
               <View className="flex-row items-center gap-2 mb-1">
                 <Star size={16} color="#F59E0B" />
-                <Text size="xs" className="text-gray-600">Rating</Text>
+                <Text size="xs" className="text-gray-600">
+                  Rating
+                </Text>
               </View>
-              <Heading size="lg" className="text-black">{HANDYMAN_STATS.rating}</Heading>
+              <Heading size="lg" className="text-black">
+                {HANDYMAN_STATS.rating}
+              </Heading>
             </View>
           </View>
         </View>
@@ -217,7 +245,11 @@ export default function Home() {
           <Heading size="md" className="text-black mb-3">
             Categories
           </Heading>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="-mx-6 px-6">
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            className="-mx-6 px-6"
+          >
             <View className="flex-row gap-3">
               {JOB_CATEGORIES.map((category) => {
                 const Icon = category.icon;
@@ -227,7 +259,9 @@ export default function Home() {
                     key={category.id}
                     onPress={() => setSelectedCategory(category.id)}
                     className={`px-4 py-3 rounded-full flex-row items-center gap-2 ${
-                      isSelected ? "bg-black" : "bg-white border border-gray-200"
+                      isSelected
+                        ? "bg-black"
+                        : "bg-white border border-gray-200"
                     }`}
                   >
                     <Icon
@@ -333,7 +367,7 @@ export default function Home() {
                       </TouchableOpacity>
 
                       <TouchableOpacity
-                        onPress={() => handleAcceptJob()}
+                        onPress={() => handleAcceptJob(job)}
                         className="flex-1 bg-black py-2.5 rounded-full items-center"
                       >
                         <Text size="sm" className="text-white font-semibold">
@@ -349,14 +383,5 @@ export default function Home() {
         </View>
       </ScrollView>
     </SafeAreaView>
-
-    <JobDetailsBottomSheet
-      isOpen={isBottomSheetOpen}
-      onClose={() => setIsBottomSheetOpen(false)}
-      job={selectedJob}
-      onAccept={handleAcceptJob}
-      onDecline={handleDeclineJob}
-    />
-    </>
   );
 }

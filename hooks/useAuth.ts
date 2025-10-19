@@ -90,12 +90,29 @@ export const useAuth = () => {
     }
   };
 
+  const changePassword = async (newPassword: string) => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+      if (error) throw error;
+      return { data, error: null };
+    } catch (error: any) {
+      Alert.alert('Password Change Error', error.message);
+      return { data: null, error };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     signUp,
     signIn,
     verifyOtp,
     resendOtp,
     logout,
+    changePassword,
     loading,
   };
 };
