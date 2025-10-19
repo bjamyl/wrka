@@ -4,18 +4,17 @@ import { useRouter } from "expo-router";
 import {
   Clock,
   DollarSign,
-  Droplet,
-  Hammer,
   MapPin,
-  Paintbrush,
   Star,
   TrendingUp,
   Wrench,
-  Zap,
 } from "lucide-react-native";
+import * as LucideIcons from "lucide-react-native";
 import React, { useState } from "react";
 import { ScrollView, Switch, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useServiceCategories } from "@/hooks/useServiceCategories";
+import { CategorySkeleton } from "@/components/ui/Skeleton";
 
 // Dummy data
 const HANDYMAN_STATS = {
@@ -24,14 +23,6 @@ const HANDYMAN_STATS = {
   rating: 4.8,
   completedJobs: 127,
 };
-
-const JOB_CATEGORIES = [
-  { id: "all", name: "All", icon: Wrench, color: "#6B7280" },
-  { id: "plumbing", name: "Plumbing", icon: Droplet, color: "#3B82F6" },
-  { id: "electrical", name: "Electrical", icon: Zap, color: "#F59E0B" },
-  { id: "carpentry", name: "Carpentry", icon: Hammer, color: "#8B4513" },
-  { id: "painting", name: "Painting", icon: Paintbrush, color: "#EC4899" },
-];
 
 const NEARBY_JOBS = [
   {
@@ -133,18 +124,26 @@ const NEARBY_JOBS = [
   },
 ];
 
+// Dynamically get icon component from Lucide by name
+const getIconComponent = (iconName: string) => {
+  const Icon = (LucideIcons as any)[iconName];
+  return Icon || Wrench; // Fallback to Wrench if icon not found
+};
+
 export default function Home() {
   const router = useRouter();
+  const { categories, loading: categoriesLoading } = useServiceCategories();
   const [isAvailable, setIsAvailable] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState("all");
 
   const getCategoryIcon = (categoryId: string) => {
-    const category = JOB_CATEGORIES.find((c) => c.id === categoryId);
-    return category?.icon || Wrench;
+    const category = categories?.find((c) => c.id === categoryId);
+    console.log("found category ", category);
+    return category ? getIconComponent(category.icon_name) : Wrench;
   };
 
   const getCategoryColor = (categoryId: string) => {
-    const category = JOB_CATEGORIES.find((c) => c.id === categoryId);
+    const category = categories.find((c) => c.id === categoryId);
     return category?.color || "#6B7280";
   };
 
@@ -250,34 +249,60 @@ export default function Home() {
             showsHorizontalScrollIndicator={false}
             className="-mx-6 px-6"
           >
-            <View className="flex-row gap-3">
-              {JOB_CATEGORIES.map((category) => {
-                const Icon = category.icon;
-                const isSelected = selectedCategory === category.id;
-                return (
-                  <TouchableOpacity
-                    key={category.id}
-                    onPress={() => setSelectedCategory(category.id)}
-                    className={`px-4 py-3 rounded-full flex-row items-center gap-2 ${
-                      isSelected
-                        ? "bg-black"
-                        : "bg-white border border-gray-200"
-                    }`}
+            {categoriesLoading ? (
+              <CategorySkeleton />
+            ) : (
+              <View className="flex-row gap-3">
+                {/* All category */}
+                <TouchableOpacity
+                  onPress={() => setSelectedCategory("all")}
+                  className={`px-4 py-3 rounded-full flex-row items-center gap-2 ${
+                    selectedCategory === "all"
+                      ? "bg-black"
+                      : "bg-white border border-gray-200"
+                  }`}
+                >
+                  <Wrench
+                    size={18}
+                    color={selectedCategory === "all" ? "#FFFFFF" : "#6B7280"}
+                  />
+                  <Text
+                    size="sm"
+                    className={`font-medium ${selectedCategory === "all" ? "text-white" : "text-gray-700"}`}
                   >
-                    <Icon
-                      size={18}
-                      color={isSelected ? "#FFFFFF" : category.color}
-                    />
-                    <Text
-                      size="sm"
-                      className={`font-medium ${isSelected ? "text-white" : "text-gray-700"}`}
+                    All
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Dynamic categories from database */}
+                {categories.map((category) => {
+                  const Icon = getIconComponent(category.icon_name);
+                  const isSelected = selectedCategory === category.id;
+                  return (
+                    <TouchableOpacity
+                      key={category.id}
+                      onPress={() => setSelectedCategory(category.id)}
+                      className={`px-4 py-3 rounded-full flex-row items-center gap-2 ${
+                        isSelected
+                          ? "bg-black"
+                          : "bg-white border border-gray-200"
+                      }`}
                     >
-                      {category.name}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
+                      <Icon
+                        size={18}
+                        color={isSelected ? "#FFFFFF" : category.color}
+                      />
+                      <Text
+                        size="sm"
+                        className={`font-medium ${isSelected ? "text-white" : "text-gray-700"}`}
+                      >
+                        {category.name}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            )}
           </ScrollView>
         </View>
 

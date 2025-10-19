@@ -7,7 +7,7 @@ import { VStack } from "@/components/ui/vstack";
 import { useHandymanProfile } from "@/hooks/useHandymanProfile";
 import { Certificate } from "@/types/profile";
 import { useRouter } from "expo-router";
-import { ArrowLeft, Award, CheckCircle, Clock, DollarSign, Download, FileText, MapPin, Shield, Star, XCircle } from "lucide-react-native";
+import { ArrowLeft, Award, Briefcase, CheckCircle, Clock, DollarSign, Download, FileText, MapPin, Navigation, Shield, Star, XCircle } from "lucide-react-native";
 import React from "react";
 import { ActivityIndicator, Linking, RefreshControl, ScrollView, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -40,6 +40,23 @@ export default function HandymanProfile() {
     } catch (error) {
       console.error("Error opening certificate:", error);
       alert("Failed to open certificate");
+    }
+  };
+
+  const handleOpenLocation = async () => {
+    if (handymanProfile?.location_lat && handymanProfile?.location_lng) {
+      const url = `https://www.google.com/maps/search/?api=1&query=${handymanProfile.location_lat},${handymanProfile.location_lng}`;
+      try {
+        const supported = await Linking.canOpenURL(url);
+        if (supported) {
+          await Linking.openURL(url);
+        } else {
+          alert("Cannot open maps");
+        }
+      } catch (error) {
+        console.error("Error opening location:", error);
+        alert("Failed to open location");
+      }
     }
   };
 
@@ -181,36 +198,36 @@ export default function HandymanProfile() {
 
           {/* Verification Status Badges */}
           <HStack space="md" className="mb-4">
-            <View className={`flex-1 ${handymanProfile.is_verified ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'} border rounded-2xl p-4`}>
+            <View className={`flex-1 ${handymanProfile.is_verified ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'} border rounded-2xl p-4`}>
               <HStack space="sm" className="items-center">
                 {handymanProfile.is_verified ? (
                   <CheckCircle size={18} color="#10B981" />
                 ) : (
-                  <XCircle size={18} color="#9CA3AF" />
+                  <XCircle size={18} color="#EF4444" />
                 )}
                 <VStack space="xs" className="flex-1">
-                  <Text size="sm" className={`${handymanProfile.is_verified ? 'text-green-700' : 'text-gray-700'} font-dmsans-bold`}>
+                  <Text size="sm" className={`${handymanProfile.is_verified ? 'text-green-700' : 'text-red-700'} font-dmsans-bold`}>
                     {handymanProfile.is_verified ? 'Verified' : 'Not Verified'}
                   </Text>
-                  <Text size="xs" className={`${handymanProfile.is_verified ? 'text-green-600' : 'text-gray-500'} font-dmsans`}>
+                  <Text size="xs" className={`${handymanProfile.is_verified ? 'text-green-600' : 'text-red-600'} font-dmsans`}>
                     {handymanProfile.is_verified ? 'Admin verified' : 'Pending verification'}
                   </Text>
                 </VStack>
               </HStack>
             </View>
 
-            <View className={`flex-1 ${handymanProfile.certified ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200'} border rounded-2xl p-4`}>
+            <View className={`flex-1 ${handymanProfile.certified ? 'bg-blue-50 border-blue-200' : 'bg-amber-50 border-amber-200'} border rounded-2xl p-4`}>
               <HStack space="sm" className="items-center">
                 {handymanProfile.certified ? (
                   <Award size={18} color="#3B82F6" />
                 ) : (
-                  <Award size={18} color="#9CA3AF" />
+                  <Award size={18} color="#F59E0B" />
                 )}
                 <VStack space="xs" className="flex-1">
-                  <Text size="sm" className={`${handymanProfile.certified ? 'text-blue-700' : 'text-gray-700'} font-dmsans-bold`}>
+                  <Text size="sm" className={`${handymanProfile.certified ? 'text-blue-700' : 'text-amber-700'} font-dmsans-bold`}>
                     {handymanProfile.certified ? 'Certified' : 'Not Certified'}
                   </Text>
-                  <Text size="xs" className={`${handymanProfile.certified ? 'text-blue-600' : 'text-gray-500'} font-dmsans`}>
+                  <Text size="xs" className={`${handymanProfile.certified ? 'text-blue-600' : 'text-amber-600'} font-dmsans`}>
                     {handymanProfile.certified ? 'Has certificates' : 'No certificates'}
                   </Text>
                 </VStack>
@@ -219,20 +236,28 @@ export default function HandymanProfile() {
           </HStack>
 
           {/* Quick Stats */}
-          <HStack space="md" className="mb-6">
+          <VStack space="md" className="mb-6">
+            <HStack space="md">
+              <InfoCard
+                icon={Star}
+                label="Rating"
+                value={handymanProfile.rating.toFixed(1)}
+                valueColor="text-yellow-600"
+              />
+              <InfoCard
+                icon={DollarSign}
+                label="Hourly Rate"
+                value={`$${handymanProfile.hourly_rate}`}
+                valueColor="text-green-600"
+              />
+            </HStack>
             <InfoCard
-              icon={Star}
-              label="Rating"
-              value={handymanProfile.rating.toFixed(1)}
-              valueColor="text-yellow-600"
+              icon={Briefcase}
+              label="Total Jobs Completed"
+              value={handymanProfile.total_jobs || 0}
+              valueColor="text-blue-600"
             />
-            <InfoCard
-              icon={DollarSign}
-              label="Hourly Rate"
-              value={`$${handymanProfile.hourly_rate}`}
-              valueColor="text-green-600"
-            />
-          </HStack>
+          </VStack>
 
           {/* Bio Section */}
           {handymanProfile.bio && (
@@ -280,6 +305,27 @@ export default function HandymanProfile() {
                   </Text>
                 </VStack>
               </HStack>
+
+              {handymanProfile.location_lat && handymanProfile.location_lng && (
+                <TouchableOpacity onPress={handleOpenLocation} activeOpacity={0.7}>
+                  <HStack space="md" className="items-center">
+                    <View className="w-10 h-10 rounded-full bg-blue-100 items-center justify-center">
+                      <Navigation size={20} color="#3B82F6" />
+                    </View>
+                    <VStack space="xs" className="flex-1">
+                      <Text size="xs" className="text-gray-500 font-dmsans">
+                        Current Location
+                      </Text>
+                      <Text size="sm" className="text-blue-600 font-dmsans-medium">
+                        {handymanProfile.location_lat.toFixed(6)}, {handymanProfile.location_lng.toFixed(6)}
+                      </Text>
+                      <Text size="xs" className="text-gray-400 font-dmsans">
+                        Tap to view on map
+                      </Text>
+                    </VStack>
+                  </HStack>
+                </TouchableOpacity>
+              )}
             </VStack>
           </View>
 
