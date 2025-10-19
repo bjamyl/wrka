@@ -2,127 +2,37 @@ import { Heading } from "@/components/ui/heading";
 import { Text } from "@/components/ui/text";
 import { useRouter } from "expo-router";
 import {
+  Calendar,
   Clock,
   DollarSign,
   MapPin,
   Star,
   TrendingUp,
   Wrench,
+  Inbox,
+  RefreshCw,
+  Filter,
 } from "lucide-react-native";
 import * as LucideIcons from "lucide-react-native";
 import React, { useState } from "react";
 import { ScrollView, Switch, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useServiceCategories } from "@/hooks/useServiceCategories";
-import { CategorySkeleton } from "@/components/ui/Skeleton";
+import {
+  CategorySkeleton,
+  Skeleton,
+  JobCardSkeleton,
+} from "@/components/ui/Skeleton";
+import { useProfile } from "@/hooks/useProfile";
+import { useServiceRequests } from "@/hooks/useServiceRequests";
 
-// Dummy data
+// Dummy stats - TODO: Fetch real stats from API
 const HANDYMAN_STATS = {
   todayEarnings: 245.5,
   activeJobs: 2,
   rating: 4.8,
   completedJobs: 127,
 };
-
-const NEARBY_JOBS = [
-  {
-    id: "1",
-    title: "Fix Leaking Kitchen Sink",
-    category: "plumbing",
-    description:
-      "Kitchen sink has been leaking for 2 days. Need urgent repair.",
-    fullDescription:
-      "My kitchen sink has been leaking under the cabinet for about 2 days now. The leak seems to be coming from the pipe connections. There's water damage on the cabinet floor and I'm worried it will get worse. I need someone who can come and fix this as soon as possible.",
-    payment: 85,
-    distance: "1.2 km",
-    timeAgo: "5 min ago",
-    urgent: true,
-    location: "Downtown Plaza",
-    preferredDate: "Today, ASAP",
-    estimatedDuration: "1-2 hours",
-    customer: {
-      name: "Sarah Johnson",
-      rating: 4.9,
-      completedJobs: 23,
-    },
-    requirements: [
-      "Basic plumbing tools",
-      "Pipe sealant/tape",
-      "Replacement parts if needed",
-    ],
-    photos: [],
-  },
-  {
-    id: "2",
-    title: "Install Ceiling Fan",
-    category: "electrical",
-    description: "Need to install a new ceiling fan in living room.",
-    fullDescription:
-      "I just bought a new ceiling fan for my living room and need help installing it. The fan is already unboxed and ready. There's an existing light fixture that needs to be removed first. The ceiling has a standard electrical box installed.",
-    payment: 120,
-    distance: "2.8 km",
-    timeAgo: "15 min ago",
-    urgent: false,
-    location: "Westside Apartments",
-    preferredDate: "Tomorrow, 2-5 PM",
-    estimatedDuration: "2-3 hours",
-    customer: {
-      name: "Michael Chen",
-      rating: 4.7,
-      completedJobs: 15,
-    },
-    requirements: ["Electrical tools", "Ladder", "Wire connectors"],
-    photos: [],
-  },
-  {
-    id: "3",
-    title: "Paint Bedroom Walls",
-    category: "painting",
-    description: "Two bedroom walls need fresh coat of paint.",
-    fullDescription:
-      "Looking for someone to paint two walls in my bedroom. The walls are currently white and I want them painted in a light gray color. I have the paint ready. Walls are about 10x8 feet each. Some minor wall prep might be needed.",
-    payment: 200,
-    distance: "3.5 km",
-    timeAgo: "1 hour ago",
-    urgent: false,
-    location: "Northgate Residences",
-    preferredDate: "This Weekend",
-    estimatedDuration: "4-5 hours",
-    customer: {
-      name: "Emily Rodriguez",
-      rating: 4.8,
-      completedJobs: 31,
-    },
-    requirements: [
-      "Painting supplies (brushes, rollers, tape)",
-      "Drop cloths",
-      "Ladder",
-    ],
-    photos: [],
-  },
-  {
-    id: "4",
-    title: "Repair Wooden Cabinet",
-    category: "carpentry",
-    description: "Kitchen cabinet door is broken and needs repair.",
-    fullDescription:
-      "One of my kitchen cabinet doors came off its hinges. The hinge screws pulled out of the wood and left holes. The door itself is fine, but I need the hinge area repaired properly so the door can be reattached securely.",
-    payment: 95,
-    distance: "1.8 km",
-    timeAgo: "2 hours ago",
-    urgent: false,
-    location: "Maple Street",
-    preferredDate: "Any day this week",
-    estimatedDuration: "1-2 hours",
-    customer: {
-      name: "David Kim",
-      rating: 5.0,
-      completedJobs: 8,
-    },
-    requirements: ["Wood filler or dowels", "Drill", "New hinges (if needed)"],
-    photos: [],
-  },
-];
 
 // Dynamically get icon component from Lucide by name
 const getIconComponent = (iconName: string) => {
@@ -132,36 +42,64 @@ const getIconComponent = (iconName: string) => {
 
 export default function Home() {
   const router = useRouter();
+  const { profile, loading: profileLoading } = useProfile();
   const { categories, loading: categoriesLoading } = useServiceCategories();
   const [isAvailable, setIsAvailable] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedCategory, setSelectedCategory] = useState<string | undefined>(
+    undefined,
+  );
 
-  const getCategoryIcon = (categoryId: string) => {
-    const category = categories?.find((c) => c.id === categoryId);
-    console.log("found category ", category);
-    return category ? getIconComponent(category.icon_name) : Wrench;
-  };
+  // Fetch service requests based on selected category
+  const { requests, loading: requestsLoading } =
+    useServiceRequests(selectedCategory);
 
-  const getCategoryColor = (categoryId: string) => {
-    const category = categories.find((c) => c.id === categoryId);
-    return category?.color || "#6B7280";
-  };
+  // Extract first name from full name
+  const firstName = profile?.full_name?.split(" ")[0] || "there";
 
-  const filteredJobs =
-    selectedCategory === "all"
-      ? NEARBY_JOBS
-      : NEARBY_JOBS.filter((job) => job.category === selectedCategory);
-
-  const handleJobPress = (job: (typeof NEARBY_JOBS)[0]) => {
+  const handleJobPress = (requestId: string) => {
     router.push({
       pathname: "/job-details",
-      params: { job: JSON.stringify(job) },
+      params: { requestId },
     });
   };
 
-  const handleAcceptJob = (job: (typeof NEARBY_JOBS)[0]) => {
-    console.log("Accepting job:", job.id);
+  const handleAcceptJob = (requestId: string) => {
+    console.log("Accepting job:", requestId);
     // TODO: Implement accept job logic
+  };
+
+  const handleRefresh = () => {
+    // TODO: Implement pull to refresh
+    console.log("Refreshing...");
+  };
+
+  // Format time ago
+  const getTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffMins < 1) return "Just now";
+    if (diffMins < 60) return `${diffMins} min ago`;
+    if (diffHours < 24)
+      return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
+    return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
+  };
+
+  // Format scheduled time for cards
+  const formatScheduledTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const options: Intl.DateTimeFormatOptions = {
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    };
+    return date.toLocaleString("en-US", options);
   };
 
   return (
@@ -173,13 +111,26 @@ export default function Home() {
         {/* Header Section */}
         <View className="px-6 py-4 bg-white">
           <View className="flex-row items-center justify-between mb-4">
-            <View>
-              <Heading size="xl" className="text-black">
-                Welcome back, John
-              </Heading>
-              <Text size="sm" className="text-gray-500 mt-1">
-                Ready to work today?
-              </Text>
+            <View className="flex-1">
+              {profileLoading ? (
+                <View>
+                  <Skeleton
+                    width={200}
+                    height={28}
+                    style={{ marginBottom: 6 }}
+                  />
+                  <Skeleton width={150} height={16} />
+                </View>
+              ) : (
+                <View>
+                  <Heading size="xl" className="text-black">
+                    Welcome back, {firstName}
+                  </Heading>
+                  <Text size="sm" className="text-gray-500 mt-1">
+                    Ready to work today?
+                  </Text>
+                </View>
+              )}
             </View>
             <View className="flex-row items-center gap-2">
               <Text
@@ -209,7 +160,7 @@ export default function Home() {
                 </Text>
               </View>
               <Heading size="lg" className="text-black">
-                ${HANDYMAN_STATS.todayEarnings}
+                ₵{HANDYMAN_STATS.todayEarnings}
               </Heading>
             </View>
 
@@ -255,34 +206,35 @@ export default function Home() {
               <View className="flex-row gap-3">
                 {/* All category */}
                 <TouchableOpacity
-                  onPress={() => setSelectedCategory("all")}
-                  className={`px-4 py-3 rounded-full flex-row items-center gap-2 ${
-                    selectedCategory === "all"
+                  activeOpacity={1}
+                  onPress={() => setSelectedCategory(undefined)}
+                  className={`px-4 py-1 rounded-full flex-row items-center gap-2 ${
+                    !selectedCategory
                       ? "bg-black"
                       : "bg-white border border-gray-200"
                   }`}
                 >
                   <Wrench
                     size={18}
-                    color={selectedCategory === "all" ? "#FFFFFF" : "#6B7280"}
+                    color={!selectedCategory ? "#FFFFFF" : "#6B7280"}
                   />
                   <Text
                     size="sm"
-                    className={`font-medium ${selectedCategory === "all" ? "text-white" : "text-gray-700"}`}
+                    className={`font-medium ${!selectedCategory ? "text-white" : "text-gray-700"}`}
                   >
                     All
                   </Text>
                 </TouchableOpacity>
 
-                {/* Dynamic categories from database */}
                 {categories.map((category) => {
                   const Icon = getIconComponent(category.icon_name);
                   const isSelected = selectedCategory === category.id;
                   return (
                     <TouchableOpacity
                       key={category.id}
+                      activeOpacity={1}
                       onPress={() => setSelectedCategory(category.id)}
-                      className={`px-4 py-3 rounded-full flex-row items-center gap-2 ${
+                      className={`px-4 py-1 rounded-full flex-row items-center gap-2 ${
                         isSelected
                           ? "bg-black"
                           : "bg-white border border-gray-200"
@@ -310,101 +262,229 @@ export default function Home() {
         <View className="px-6 pb-4">
           <View className="flex-row items-center justify-between mb-3">
             <Heading size="md" className="text-black">
-              Nearby Jobs
+              Job Requests
             </Heading>
             <Text size="sm" className="text-blue-600 font-medium">
-              {filteredJobs.length} available
+              {requests.length} available
             </Text>
           </View>
 
-          <View className="gap-3">
-            {filteredJobs.map((job) => {
-              const Icon = getCategoryIcon(job.category);
-              const iconColor = getCategoryColor(job.category);
+          {requestsLoading ? (
+            <View className="gap-3">
+              <JobCardSkeleton />
+              <JobCardSkeleton />
+              <JobCardSkeleton />
+            </View>
+          ) : requests.length === 0 ? (
+            <View className="bg-white rounded-2xl px-8 py-4 justify-center items-center mt-3">
+              {/* Icon */}
+              <View className="w-20 h-20 rounded-full bg-gray-100 p-2 items-center justify-center mb-2">
+                {selectedCategory ? (
+                  <Filter size={14} color="#9CA3AF" />
+                ) : (
+                  <Inbox size={14} color="#9CA3AF" />
+                )}
+              </View>
 
-              return (
-                <TouchableOpacity
-                  key={job.id}
-                  onPress={() => handleJobPress(job)}
-                  className="bg-white rounded-2xl p-4 border border-gray-100"
-                >
-                  <View className="flex-row items-start justify-between mb-3">
-                    <View className="flex-1">
-                      <View className="flex-row items-center gap-2 mb-2">
-                        <View
-                          className="w-10 h-10 rounded-full items-center justify-center"
-                          style={{ backgroundColor: `${iconColor}15` }}
-                        >
-                          <Icon size={20} color={iconColor} />
+              {/* Title */}
+              <Heading
+                size="lg"
+                className="text-black mb-2 text-center font-dmsans-bold"
+              >
+                {selectedCategory
+                  ? "No Jobs in This Category"
+                  : "All Caught Up!"}
+              </Heading>
+
+              {/* Description */}
+              <Text className="text-gray-500 font-dmsans text-center px-4 mb-4">
+                {selectedCategory
+                  ? "There are currently no pending jobs for this category. Try browsing other categories or check back soon."
+                  : "Great news! There are no pending jobs right now. New opportunities will appear here when customers need your skills."}
+              </Text>
+
+              {/* Actions */}
+              <View className="flex-row gap-3">
+                {selectedCategory ? (
+                  <>
+                    <TouchableOpacity
+                      onPress={() => setSelectedCategory(undefined)}
+                      className="bg-black px-6 py-3 rounded-full flex-row items-center gap-2"
+                    >
+                      <Text className="text-white font-dmsans-bold text-sm">
+                        View All Jobs
+                      </Text>
+                    </TouchableOpacity>
+                  </>
+                ) : (
+                  <TouchableOpacity
+                    onPress={handleRefresh}
+                    className="bg-gray-100 px-6 py-3 rounded-full flex-row items-center gap-2"
+                  >
+                    <RefreshCw size={16} color="#000" />
+                    <Text className="text-black font-dmsans-bold text-sm">
+                      Refresh
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+
+              {/* Tips Section */}
+              {!selectedCategory && (
+                <View className="mt-8 pt-6 border-t border-gray-100 w-full">
+                  <Text className="text-gray-600 font-dmsans-bold text-xs mb-3 text-center">
+                    💡 TIPS TO GET MORE JOBS
+                  </Text>
+                  <View className="gap-2">
+                    <View className="flex-row items-start gap-2">
+                      <Text className="text-gray-500 font-dmsans text-sm">
+                        •
+                      </Text>
+                      <Text className="text-gray-600 font-dmsans text-sm flex-1">
+                        Make sure your availability is turned ON
+                      </Text>
+                    </View>
+                    <View className="flex-row items-start gap-2">
+                      <Text className="text-gray-500 font-dmsans text-sm">
+                        •
+                      </Text>
+                      <Text className="text-gray-600 font-dmsans text-sm flex-1">
+                        Complete your profile to build trust
+                      </Text>
+                    </View>
+                    <View className="flex-row items-start gap-2">
+                      <Text className="text-gray-500 font-dmsans text-sm">
+                        •
+                      </Text>
+                      <Text className="text-gray-600 font-dmsans text-sm flex-1">
+                        Check back regularly for new opportunities
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              )}
+            </View>
+          ) : (
+            <View className="gap-3">
+              {requests.map((request) => {
+                const categoryIcon = request.category
+                  ? getIconComponent(request.category.icon_name)
+                  : Wrench;
+                const categoryColor = request.category?.color || "#6B7280";
+                const isUrgent = request.priority === "urgent";
+
+                return (
+                  <TouchableOpacity
+                    key={request.id}
+                    onPress={() => handleJobPress(request.id)}
+                    className="bg-white rounded-2xl p-4 border border-gray-100"
+                  >
+                    <View className="flex-row items-start justify-between mb-3">
+                      <View className="flex-1">
+                        <View className="flex-row items-center gap-2 mb-2">
+                          <View
+                            className="w-10 h-10 rounded-full items-center justify-center"
+                            style={{ backgroundColor: `${categoryColor}15` }}
+                          >
+                            {React.createElement(categoryIcon, {
+                              size: 20,
+                              color: categoryColor,
+                            })}
+                          </View>
+                          <View className="flex-1">
+                            <Heading size="sm" className="text-black">
+                              {request.title}
+                            </Heading>
+                            <Text size="xs" className="text-gray-500 mt-0.5">
+                              {request.location_address}
+                            </Text>
+                          </View>
                         </View>
-                        <View className="flex-1">
-                          <Heading size="sm" className="text-black">
-                            {job.title}
-                          </Heading>
-                          <Text size="xs" className="text-gray-500 mt-0.5">
-                            {job.location}
+                        <Text size="sm" className="text-gray-600 mb-3">
+                          {request.description}
+                        </Text>
+                      </View>
+                      {isUrgent && (
+                        <View className="bg-red-50 px-2 py-1 rounded-full">
+                          <Text
+                            size="xs"
+                            className="text-red-600 font-semibold"
+                          >
+                            Urgent
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+
+                    <View>
+                      {/* Scheduled Time - Highlighted */}
+                      {request.scheduled_time && (
+                        <View className="bg-blue-50 px-4 py-3 rounded-xl mb-3 border border-blue-200">
+                          <View className="flex-row items-center gap-2">
+                            <Calendar size={16} color="#3B82F6" />
+
+                            <Text className="text-blue-600 text-xs font-dmsans">
+                              Scheduled:
+                            </Text>
+                            <Text className="text-blue-900 font-dmsans-bold text-sm">
+                              {formatScheduledTime(request.scheduled_time)}
+                            </Text>
+                          </View>
+                        </View>
+                      )}
+
+                      <View className="flex-row items-center gap-4 mb-3">
+                        {request.estimated_cost && (
+                          <View className="flex-row items-center gap-1">
+                            <Text
+                              size="sm"
+                              className="text-green-600 font-bold"
+                            >
+                              ₵{request.estimated_cost}
+                            </Text>
+                          </View>
+                        )}
+                        {request.distance_km !== undefined && (
+                          <View className="flex-row items-center gap-1">
+                            <MapPin size={16} color="#6B7280" />
+                            <Text size="sm" className="text-gray-600">
+                              {request.distance_km} km
+                            </Text>
+                          </View>
+                        )}
+                        <View className="flex-row items-center gap-1">
+                          <Clock size={16} color="#6B7280" />
+                          <Text size="sm" className="text-gray-600">
+                            Posted {getTimeAgo(request.created_at)}
                           </Text>
                         </View>
                       </View>
-                      <Text size="sm" className="text-gray-600 mb-3">
-                        {job.description}
-                      </Text>
-                    </View>
-                    {job.urgent && (
-                      <View className="bg-red-50 px-2 py-1 rounded-full">
-                        <Text size="xs" className="text-red-600 font-semibold">
-                          Urgent
-                        </Text>
-                      </View>
-                    )}
-                  </View>
 
-                  <View>
-                    <View className="flex-row items-center gap-4 mb-3">
-                      <View className="flex-row items-center gap-1">
-                        <DollarSign size={16} color="#10B981" />
-                        <Text size="sm" className="text-black font-bold">
-                          ${job.payment}
-                        </Text>
-                      </View>
-                      <View className="flex-row items-center gap-1">
-                        <MapPin size={16} color="#6B7280" />
-                        <Text size="sm" className="text-gray-600">
-                          {job.distance}
-                        </Text>
-                      </View>
-                      <View className="flex-row items-center gap-1">
-                        <Clock size={16} color="#6B7280" />
-                        <Text size="sm" className="text-gray-600">
-                          {job.timeAgo}
-                        </Text>
+                      <View className="flex-row gap-2">
+                        <TouchableOpacity
+                          onPress={() => handleJobPress(request.id)}
+                          className="flex-1 bg-gray-100 py-2.5 rounded-full items-center"
+                        >
+                          <Text size="sm" className="text-black font-semibold">
+                            View Details
+                          </Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                          onPress={() => handleAcceptJob(request.id)}
+                          className="flex-1 bg-black py-2.5 rounded-full items-center"
+                        >
+                          <Text size="sm" className="text-white font-semibold">
+                            Accept
+                          </Text>
+                        </TouchableOpacity>
                       </View>
                     </View>
-
-                    <View className="flex-row gap-2">
-                      <TouchableOpacity
-                        onPress={() => handleJobPress(job)}
-                        className="flex-1 bg-gray-100 py-2.5 rounded-full items-center"
-                      >
-                        <Text size="sm" className="text-black font-semibold">
-                          View Details
-                        </Text>
-                      </TouchableOpacity>
-
-                      <TouchableOpacity
-                        onPress={() => handleAcceptJob(job)}
-                        className="flex-1 bg-black py-2.5 rounded-full items-center"
-                      >
-                        <Text size="sm" className="text-white font-semibold">
-                          Accept
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>

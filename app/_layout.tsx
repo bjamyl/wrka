@@ -1,4 +1,7 @@
 import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
+import { NotificationProvider } from "@/contexts/NotificationsContext";
+import { ServiceRequestProvider } from "@/contexts/ServiceRequestsContext";
+import { NotificationToast } from "@/components/notifications-toast";
 import "@/global.css";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { queryClient } from "@/lib/queryClient";
@@ -45,24 +48,32 @@ export default function RootLayout() {
   }
 
   return (
-   <QueryClientProvider client={queryClient}>
-     <GluestackUIProvider mode="light">
-      <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="(auth)" />
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen
-            name="modal"
-            options={{
-              presentation: "modal",
-              title: "Modal",
-              headerShown: true,
-            }}
-          />
-        </Stack>
-        <StatusBar style="auto" />
-      </ThemeProvider>
-    </GluestackUIProvider>
-   </QueryClientProvider>
+    <QueryClientProvider client={queryClient}>
+      <NotificationProvider>
+        <ServiceRequestProvider>
+          <GluestackUIProvider mode="light">
+            <ThemeProvider
+              value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
+            >
+              <Stack screenOptions={{ headerShown: false }}>
+                <Stack.Screen name="(auth)" />
+                <Stack.Screen name="(tabs)" />
+                <Stack.Screen
+                  name="modal"
+                  options={{
+                    presentation: "modal",
+                    title: "Modal",
+                    headerShown: true,
+                  }}
+                />
+              </Stack>
+              <StatusBar style="auto" />
+
+              <NotificationToast />
+            </ThemeProvider>
+          </GluestackUIProvider>
+        </ServiceRequestProvider>
+      </NotificationProvider>
+    </QueryClientProvider>
   );
 }
