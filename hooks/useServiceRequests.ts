@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { ServiceRequestWithDetails } from '@/types/service';
 import { useHandymanProfile } from './useHandymanProfile';
@@ -99,7 +99,46 @@ const fetchServiceRequests = async (
   });
 };
 
+// Accept service request function
+const acceptServiceRequest = async (requestId: string, handymanId: string) => {
+  const { data, error } = await supabase
+    .from('service_requests')
+    .update({
+      status: 'accepted',
+      accepted_at: new Date().toISOString(),
+      handyman_id: handymanId,
+    })
+    .eq('id', requestId)
+    .eq('status', 'pending') // Only accept if still pending
+    .select()
+    .single();
+
+  if (error) throw error;
+  if (!data) throw new Error('Request no longer available');
+  
+  return data;
+};
+
+// Decline service request function
+const declineServiceRequest = async (requestId: string) => {
+  const { data, error } = await supabase
+    .from('service_requests')
+    .update({
+      status: 'declined',
+    })
+    .eq('id', requestId)
+    .eq('status', 'pending') // Only decline if still pending
+    .select()
+    .single();
+
+  if (error) throw error;
+  if (!data) throw new Error('Request no longer available');
+  
+  return data;
+};
+
 export const useServiceRequests = (categoryId?: string) => {
+  const queryClient = useQueryClient();
   const { handymanProfile } = useHandymanProfile();
 
   const {
@@ -120,10 +159,43 @@ export const useServiceRequests = (categoryId?: string) => {
     refetchInterval: 1000 * 60, // Auto-refetch every minute
   });
 
+  // Accept mutation
+  const acceptMutation = useMutation({
+    mutationFn: (requestId: string) => {
+      if (!handymanProfile?.id) {
+        throw new Error('Handyman profile not found');
+      }
+      return acceptServiceRequest(requestId, handymanProfile.id);
+    },
+    onSuccess: () => {
+      // Invalidate queries to refresh the lists
+      queryClient.invalidateQueries({ queryKey: ['service-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['service-request'] });
+    },
+  });
+
+  // Decline mutation
+  const declineMutation = useMutation({
+    mutationFn: declineServiceRequest,
+    onSuccess: () => {
+      // Invalidate queries to refresh the lists
+      queryClient.invalidateQueries({ queryKey: ['service-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['service-request'] });
+    },
+  });
+
   return {
     requests: requests ?? [],
     loading,
     error: queryError?.message ?? null,
     refetch,
+    acceptRequest: acceptMutation.mutate,
+    acceptRequestAsync: acceptMutation.mutateAsync,
+    isAccepting: acceptMutation.isPending,
+    acceptError: acceptMutation.error?.message,
+    declineRequest: declineMutation.mutate,
+    declineRequestAsync: declineMutation.mutateAsync,
+    isDeclining: declineMutation.isPending,
+    declineError: declineMutation.error?.message,
   };
 };

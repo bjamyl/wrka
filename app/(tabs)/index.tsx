@@ -208,7 +208,7 @@ export default function Home() {
                 <TouchableOpacity
                   activeOpacity={1}
                   onPress={() => setSelectedCategory(undefined)}
-                  className={`px-4 py-1 rounded-full flex-row items-center gap-2 ${
+                  className={`px-6 py-2 rounded-full flex-row items-center gap-2 ${
                     !selectedCategory
                       ? "bg-black"
                       : "bg-white border border-gray-200"
@@ -234,7 +234,7 @@ export default function Home() {
                       key={category.id}
                       activeOpacity={1}
                       onPress={() => setSelectedCategory(category.id)}
-                      className={`px-4 py-1 rounded-full flex-row items-center gap-2 ${
+                      className={`px-6 py-2 rounded-full flex-row items-center gap-2 ${
                         isSelected
                           ? "bg-black"
                           : "bg-white border border-gray-200"
@@ -434,16 +434,7 @@ export default function Home() {
                       )}
 
                       <View className="flex-row items-center gap-4 mb-3">
-                        {request.estimated_cost && (
-                          <View className="flex-row items-center gap-1">
-                            <Text
-                              size="sm"
-                              className="text-green-600 font-bold"
-                            >
-                              ₵{request.estimated_cost}
-                            </Text>
-                          </View>
-                        )}
+                        
                         {request.distance_km !== undefined && (
                           <View className="flex-row items-center gap-1">
                             <MapPin size={16} color="#6B7280" />
@@ -455,7 +446,7 @@ export default function Home() {
                         <View className="flex-row items-center gap-1">
                           <Clock size={16} color="#6B7280" />
                           <Text size="sm" className="text-gray-600">
-                            Posted {getTimeAgo(request.created_at)}
+                            Requested {getTimeAgo(request.created_at)}
                           </Text>
                         </View>
                       </View>

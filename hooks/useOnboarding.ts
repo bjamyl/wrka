@@ -26,7 +26,7 @@ export type HandymanProfileData = {
   hourly_rate: number;
   location_lat?: number;
   location_lng?: number;
-  service_radius_km?: number;
+  service_radius?: number;
   certified: boolean;
   certificates?: Certificate[];
 };
@@ -70,7 +70,7 @@ export const useOnboarding = (): UseOnboardingReturn => {
       country: "Ghana",
     },
     handymanProfile: {
-      service_radius_km: 10,
+      service_radius: 10,
       certified: false,
     },
   });
