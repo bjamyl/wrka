@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { Alert } from "react-native";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { uploadCertificates } from "../lib/cloudinary";
 import { supabase } from "../lib/supabase";
 import type { Certificate } from "../lib/cloudinary";
@@ -25,7 +26,7 @@ export type HandymanProfileData = {
   hourly_rate: number;
   location_lat?: number;
   location_lng?: number;
-  service_radius_km?: number;
+  service_radius?: number;
   certified: boolean;
   certificates?: Certificate[];
 };
@@ -60,6 +61,7 @@ type UseOnboardingReturn = {
 
 export const useOnboarding = (): UseOnboardingReturn => {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [onboardingData, setOnboardingData] = useState<OnboardingData>({
@@ -68,7 +70,7 @@ export const useOnboarding = (): UseOnboardingReturn => {
       country: "Ghana",
     },
     handymanProfile: {
-      service_radius_km: 10,
+      service_radius: 10,
       certified: false,
     },
   });
@@ -113,127 +115,152 @@ export const useOnboarding = (): UseOnboardingReturn => {
     [],
   );
 
-  const submitVerificationInfo = useCallback(
-    async (data: VerificationInfoStep) => {
-      try {
-        setIsSubmitting(true);
-        setUploadProgress(0);
+  const submitVerificationInfoMutation = useMutation({
+    mutationFn: async ({
+      verificationData,
+      completeProfileData,
+      completeHandymanData,
+    }: {
+      verificationData: VerificationInfoStep;
+      completeProfileData: Partial<ProfileData>;
+      completeHandymanData: Partial<HandymanProfileData>;
+    }) => {
+      let uploadedCertificates: Certificate[] = [];
+      if (verificationData.certificates?.length) {
+        Alert.alert("Uploading", "Uploading your certificates...");
+        uploadedCertificates = await uploadCertificates(
+          verificationData.certificates,
+          setUploadProgress,
+        );
+      }
 
-        let uploadedCertificates: Certificate[] = [];
-        if (data.certificates?.length) {
-          Alert.alert("Uploading", "Uploading your certificates...");
-          uploadedCertificates = await uploadCertificates(
-            data.certificates,
-            setUploadProgress,
+      // Get the current user
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        throw new Error("No authenticated user found");
+      }
+
+      // Step 1: Upsert profile data
+      const { data: profileData, error: profileError } = await supabase
+        .from("profiles")
+        .upsert({
+          id: user.id,
+          ...completeProfileData,
+          updated_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
+
+      if (profileError) {
+        console.error("Profile error:", profileError);
+        throw new Error(`Failed to save profile: ${profileError.message}`);
+      }
+
+      const { data: existingHandyman } = await supabase
+        .from("handyman_profiles")
+        .select("id")
+        .eq("profile_id", user.id)
+        .single();
+
+      let handymanData;
+      const handymanDataWithCerts = {
+        ...completeHandymanData,
+        certified: uploadedCertificates.length > 0,
+        certificates: uploadedCertificates,
+      };
+
+      if (existingHandyman) {
+        const { data, error: handymanError } = await supabase
+          .from("handyman_profiles")
+          .update(handymanDataWithCerts)
+          .eq("profile_id", user.id)
+          .select()
+          .single();
+
+        if (handymanError) {
+          console.error("Handyman update error:", handymanError);
+          throw new Error(
+            `Failed to update handyman profile: ${handymanError.message}`,
           );
         }
-
-        const completeProfileData: Partial<ProfileData> = {
-          ...onboardingData.profile,
-          id_type: data.id_type,
-          id_number: data.id_number,
-        };
-
-        const completeHandymanData: Partial<HandymanProfileData> = {
-          ...onboardingData.handymanProfile,
-          certified: uploadedCertificates.length > 0,
-          certificates: uploadedCertificates,
-        };
-
-        // Get the current user
-        const {
-          data: { user },
-          error: userError,
-        } = await supabase.auth.getUser();
-
-        if (userError || !user) {
-          throw new Error("No authenticated user found");
-        }
-
-        // Step 1: Upsert profile data
-        const { data: profileData, error: profileError } = await supabase
-          .from("profiles")
-          .upsert({
-            id: user.id,
-            ...completeProfileData,
-            updated_at: new Date().toISOString(),
+        handymanData = data;
+      } else {
+        const { data, error: handymanError } = await supabase
+          .from("handyman_profiles")
+          .insert({
+            ...handymanDataWithCerts,
+            profile_id: user.id,
           })
           .select()
           .single();
 
-        if (profileError) {
-          console.error("Profile error:", profileError);
-          throw new Error(`Failed to save profile: ${profileError.message}`);
+        if (handymanError) {
+          console.error("Handyman insert error:", handymanError);
+          throw new Error(
+            `Failed to create handyman profile: ${handymanError.message}`,
+          );
         }
+        handymanData = data;
+      }
 
-        const { data: existingHandyman } = await supabase
-          .from("handyman_profiles")
-          .select("id")
-          .eq("profile_id", user.id)
-          .single();
+      return { profileData, handymanData };
+    },
+    onSuccess: (data) => {
+      console.log("Profile created/updated successfully:", data);
+      // Invalidate profile and handyman profile queries to refetch fresh data
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+      queryClient.invalidateQueries({ queryKey: ["handyman-profile"] });
 
-        let handymanData;
-        if (existingHandyman) {
-          const { data, error: handymanError } = await supabase
-            .from("handyman_profiles")
-            .update({
-              ...completeHandymanData,
-              certificates: uploadedCertificates,
-            })
-            .eq("profile_id", user.id)
-            .select()
-            .single();
+      Alert.alert("Success", "Your profile has been created successfully!", [
+        { text: "OK", onPress: () => router.push("/(tabs)") },
+      ]);
+    },
+    onError: (error) => {
+      console.error("Error completing onboarding:", error);
+      Alert.alert(
+        "Error",
+        error instanceof Error
+          ? error.message
+          : "Failed to complete onboarding. Please try again.",
+      );
+    },
+    onSettled: () => {
+      setIsSubmitting(false);
+      setUploadProgress(0);
+    },
+  });
 
-          if (handymanError) {
-            console.error("Handyman update error:", handymanError);
-            throw new Error(
-              `Failed to update handyman profile: ${handymanError.message}`,
-            );
-          }
-          handymanData = data;
-        } else {
-          const { data, error: handymanError } = await supabase
-            .from("handyman_profiles")
-            .insert({
-              ...completeHandymanData,
-              profile_id: user.id,
-              certificates: uploadedCertificates,
-            })
-            .select()
-            .single();
+  const submitVerificationInfo = useCallback(
+    async (data: VerificationInfoStep) => {
+      setIsSubmitting(true);
+      setUploadProgress(0);
 
-          if (handymanError) {
-            console.error("Handyman insert error:", handymanError);
-            throw new Error(
-              `Failed to create handyman profile: ${handymanError.message}`,
-            );
-          }
-          handymanData = data;
-        }
+      const completeProfileData: Partial<ProfileData> = {
+        ...onboardingData.profile,
+        id_type: data.id_type,
+        id_number: data.id_number,
+      };
 
-        console.log("Profile created/updated successfully:", {
-          profileData,
-          handymanData,
+      const completeHandymanData: Partial<HandymanProfileData> = {
+        ...onboardingData.handymanProfile,
+      };
+
+      try {
+        await submitVerificationInfoMutation.mutateAsync({
+          verificationData: data,
+          completeProfileData,
+          completeHandymanData,
         });
-
-        Alert.alert("Success", "Your profile has been created successfully!", [
-          { text: "OK", onPress: () => router.push("/(tabs)") },
-        ]);
       } catch (error) {
-        console.error("Error completing onboarding:", error);
-        Alert.alert(
-          "Error",
-          error instanceof Error
-            ? error.message
-            : "Failed to complete onboarding. Please try again.",
-        );
+        // Error is already handled in onError callback
         throw error;
-      } finally {
-        setIsSubmitting(false);
-        setUploadProgress(0);
       }
     },
-    [onboardingData],
+    [onboardingData, submitVerificationInfoMutation],
   );
 
   return {

@@ -1,5 +1,6 @@
 import React from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Button, ButtonText } from "@/components/ui/button";
 import {
   ScrollView,
   View,

@@ -37,6 +37,7 @@ export interface HandymanProfile {
   is_available: boolean;
   is_verified: boolean;
   rating: number;
+  total_jobs: number;
   location_lat: number;
   location_lng: number;
   service_radius: number;

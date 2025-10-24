@@ -4,7 +4,7 @@ import { useCallback } from "react";
 import { Platform } from "react-native";
 
 export default function TabLayout() {
-  const renderTabBar = useCallback((props) => <CustomTabBar {...props} />, []);
+  const renderTabBar = useCallback((props:any) => <CustomTabBar {...props} />, []);
   return (
     <Tabs
       screenOptions={{

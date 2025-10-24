@@ -1,107 +1,108 @@
-import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { Profile, ProfileWithAuth } from '@/types/profile';
 import { Alert } from 'react-native';
 
-export const useProfile = () => {
-  const [profile, setProfile] = useState<ProfileWithAuth | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [updating, setUpdating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+const fetchProfile = async (): Promise<ProfileWithAuth> => {
+  // Get current user
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
 
-  const fetchProfile = async () => {
-    try {
-      setLoading(true);
-      setError(null);
+  if (userError) throw userError;
+  if (!user) throw new Error('No user found');
 
-      // Get current user
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
+  // Fetch profile data
+  const { data: profileData, error: profileError } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', user.id)
+    .single();
 
-      if (userError) throw userError;
-      if (!user) throw new Error('No user found');
+  if (profileError) throw profileError;
 
-      // Fetch profile data
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
-      if (profileError) throw profileError;
-
-      // Combine user and profile data
-      const combinedProfile: ProfileWithAuth = {
-        ...profileData as Profile,
-        email: user.email,
-        email_verified: user.email_confirmed_at ? true : false,
-        avatar_url: user.user_metadata?.avatar_url,
-      };
-
-      setProfile(combinedProfile);
-      return { data: combinedProfile, error: null };
-    } catch (err: any) {
-      console.error('Error fetching profile:', err);
-      setError(err.message);
-      Alert.alert('Error', 'Failed to load profile');
-      return { data: null, error: err };
-    } finally {
-      setLoading(false);
-    }
+  // Combine user and profile data
+  const combinedProfile: ProfileWithAuth = {
+    ...profileData as Profile,
+    email: user.email,
+    email_verified: user.email_confirmed_at ? true : false,
+    avatar_url: user.user_metadata?.avatar_url,
   };
+
+  return combinedProfile;
+};
+
+const updateProfileData = async (updates: Partial<Profile>): Promise<ProfileWithAuth> => {
+  // Get current user
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+  if (userError) throw userError;
+  if (!user) throw new Error('No user found');
+
+  // Update profile data
+  const { data, error: updateError } = await supabase
+    .from('profiles')
+    .update({
+      ...updates,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', user.id)
+    .select()
+    .single();
+
+  if (updateError) throw updateError;
+
+  // Combine with user data
+  const updatedProfile: ProfileWithAuth = {
+    ...data as Profile,
+    email: user.email,
+    email_verified: user.email_confirmed_at ? true : false,
+    avatar_url: user.user_metadata?.avatar_url,
+  };
+
+  return updatedProfile;
+};
+
+export const useProfile = () => {
+  const queryClient = useQueryClient();
+
+  const {
+    data: profile,
+    isLoading: loading,
+    error: queryError,
+    refetch,
+  } = useQuery({
+    queryKey: ['profile'],
+    queryFn: fetchProfile,
+    retry: 1,
+  });
+
+  const updateProfileMutation = useMutation({
+    mutationFn: updateProfileData,
+    onSuccess: (data) => {
+      // Update the cache with the new data
+      queryClient.setQueryData(['profile'], data);
+      Alert.alert('Success', 'Profile updated successfully');
+    },
+    onError: (err: any) => {
+      console.error('Error updating profile:', err);
+      Alert.alert('Error', err.message || 'Failed to update profile');
+    },
+  });
 
   const updateProfile = async (updates: Partial<Profile>) => {
     try {
-      setUpdating(true);
-
-      // Get current user
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-
-      if (userError) throw userError;
-      if (!user) throw new Error('No user found');
-
-      // Update profile data
-      const { data, error: updateError } = await supabase
-        .from('profiles')
-        .update({
-          ...updates,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', user.id)
-        .select()
-        .single();
-
-      if (updateError) throw updateError;
-
-      // Update local state
-      const updatedProfile: ProfileWithAuth = {
-        ...data as Profile,
-        email: user.email,
-        email_verified: user.email_confirmed_at ? true : false,
-        avatar_url: user.user_metadata?.avatar_url,
-      };
-
-      setProfile(updatedProfile);
-      Alert.alert('Success', 'Profile updated successfully');
-      return { data: updatedProfile, error: null };
+      const data = await updateProfileMutation.mutateAsync(updates);
+      return { data, error: null };
     } catch (err: any) {
-      console.error('Error updating profile:', err);
-      Alert.alert('Error', err.message || 'Failed to update profile');
       return { data: null, error: err };
-    } finally {
-      setUpdating(false);
     }
   };
 
-  useEffect(() => {
-    fetchProfile();
-  }, []);
-
   return {
-    profile,
+    profile: profile ?? null,
     loading,
-    updating,
-    error,
-    refetch: fetchProfile,
+    updating: updateProfileMutation.isPending,
+    error: queryError?.message ?? null,
+    refetch,
     updateProfile,
   };
 };

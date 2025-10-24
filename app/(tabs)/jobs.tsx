@@ -1,10 +1,17 @@
-import React from "react";
+import { useState} from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ScrollView, View } from "react-native";
 import { Heading } from "@/components/ui/heading";
 import { Text } from "@/components/ui/text";
+import { Tabs } from "@/components/Tabs";
 
 export default function Jobs() {
+  const [activeTab, setActiveTab] = useState('accepted');
+  const tabs = [
+  { id: 'accepted', label: 'Accepted', count: 5 },
+  { id: 'active', label: 'Active', count: 2 },
+  { id: 'completed', label: 'Completed', count: 2 },
+];
   return (
     <SafeAreaView edges={["top"]} className="flex-1 bg-white">
       <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 100 }}>
@@ -18,9 +25,7 @@ export default function Jobs() {
 
           {/* Placeholder for jobs list */}
           <View className="mt-6">
-            <Text size="sm" className="text-gray-500 text-center mt-20">
-              Your jobs will appear here
-            </Text>
+           <Tabs tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} variant="pills"/>
           </View>
         </View>
       </ScrollView>
