@@ -106,7 +106,7 @@ cssInterop(PrimitiveIcon, {
 const actionsheetStyle = tva({ base: 'w-full h-full web:pointer-events-none' });
 
 const actionsheetContentStyle = tva({
-  base: 'items-center rounded-tl-3xl rounded-tr-3xl p-5 pt-2 bg-background-0 web:pointer-events-auto web:select-none shadow-hard-5 border border-b-0 border-outline-100 pb-safe',
+  base: 'absolute bottom-0 left-0 right-0 items-center rounded-tl-3xl rounded-tr-3xl p-5 pt-2 bg-background-0 web:pointer-events-auto web:select-none shadow-hard-5 border border-b-0 border-outline-100 pb-safe',
 });
 
 const actionsheetItemStyle = tva({
@@ -153,7 +153,7 @@ const actionsheetDragIndicatorWrapperStyle = tva({
 });
 
 const actionsheetBackdropStyle = tva({
-  base: 'absolute left-0 top-0 right-0 bottom-0 bg-background-dark web:cursor-default web:pointer-events-auto',
+  base: 'absolute left-0 top-0 right-0 bottom-0 bg-black web:cursor-default web:pointer-events-auto',
 });
 
 const actionsheetScrollViewStyle = tva({
@@ -309,6 +309,19 @@ const ActionsheetContent = React.forwardRef<
 >(function ActionsheetContent({ className, ...props }, ref) {
   return (
     <UIActionsheet.Content
+      initial={{
+        translateY: 1000,
+      }}
+      animate={{
+        translateY: 0,
+      }}
+      exit={{
+        translateY: 1000,
+      }}
+      transition={{
+        type: 'timing',
+        duration: 300,
+      }}
       className={actionsheetContentStyle({
         class: className,
       })}
@@ -408,6 +421,10 @@ const ActionsheetBackdrop = React.forwardRef<
       }}
       exit={{
         opacity: 0,
+      }}
+      transition={{
+        type: 'timing',
+        duration: 200,
       }}
       {...props}
       className={actionsheetBackdropStyle({

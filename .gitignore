@@ -41,3 +41,8 @@ app-example
 # generated native folders
 /ios
 /android
+
+# internal conversation and planning files
+conversation.md
+tasks.md
+claude.md

@@ -1,30 +1,30 @@
 import { Heading } from "@/components/ui/heading";
+import {
+  CategorySkeleton,
+  JobCardSkeleton,
+  Skeleton,
+} from "@/components/ui/Skeleton";
 import { Text } from "@/components/ui/text";
+import { useProfile } from "@/hooks/useProfile";
+import { useServiceCategories } from "@/hooks/useServiceCategories";
+import { useServiceRequests } from "@/hooks/useServiceRequests";
 import { useRouter } from "expo-router";
+import * as LucideIcons from "lucide-react-native";
 import {
   Calendar,
   Clock,
   DollarSign,
+  Filter,
+  Inbox,
   MapPin,
+  RefreshCw,
   Star,
   TrendingUp,
   Wrench,
-  Inbox,
-  RefreshCw,
-  Filter,
 } from "lucide-react-native";
-import * as LucideIcons from "lucide-react-native";
 import React, { useState } from "react";
 import { ScrollView, Switch, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useServiceCategories } from "@/hooks/useServiceCategories";
-import {
-  CategorySkeleton,
-  Skeleton,
-  JobCardSkeleton,
-} from "@/components/ui/Skeleton";
-import { useProfile } from "@/hooks/useProfile";
-import { useServiceRequests } from "@/hooks/useServiceRequests";
 
 // Dummy stats - TODO: Fetch real stats from API
 const HANDYMAN_STATS = {
@@ -300,7 +300,7 @@ export default function Home() {
               <Text className="text-gray-500 font-dmsans text-center px-4 mb-4">
                 {selectedCategory
                   ? "There are currently no pending jobs for this category. Try browsing other categories or check back soon."
-                  : "Great news! There are no pending jobs right now. New opportunities will appear here when customers need your skills."}
+                  : "There are no pending jobs right now. New opportunities will appear here when customers need your skills."}
               </Text>
 
               {/* Actions */}

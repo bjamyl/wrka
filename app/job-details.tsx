@@ -1,7 +1,11 @@
+import StartJobSheet from "@/components/jobs/StartJobSheet";
 import { Heading } from "@/components/ui/heading";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { Text } from "@/components/ui/text";
+import { useServiceRequests } from "@/hooks/useServiceRequests";
+import { useStartJobStore } from "@/lib/state/jobs";
 import { supabase } from "@/lib/supabase";
+import { formatDateTime, getTimeAgo } from "@/lib/utils";
 import { ServiceRequestWithDetails } from "@/types/service";
 import { useQuery } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -15,10 +19,9 @@ import {
   Wrench,
 } from "lucide-react-native";
 import React from "react";
-import { Image, ScrollView, TouchableOpacity, View, Alert, ActivityIndicator } from "react-native";
+import { ActivityIndicator, Alert, Image, ScrollView, TouchableOpacity, View } from "react-native";
 import MapView, { Marker } from "react-native-maps";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useServiceRequests } from "@/hooks/useServiceRequests";
 
 // Dynamically get icon component from Lucide by name
 const getIconComponent = (iconName: string) => {
@@ -69,9 +72,11 @@ const fetchServiceRequestDetails = async (
 };
 
 export default function JobDetails() {
+  const {setShowStartJob, isStarting} = useStartJobStore()
   const router = useRouter();
   const params = useLocalSearchParams();
   const requestId = params.requestId as string;
+
 
   const {
     acceptRequestAsync,
@@ -81,6 +86,8 @@ export default function JobDetails() {
     isDeclining,
     declineError,
   } = useServiceRequests();
+
+
 
   const {
     data: request,
@@ -143,39 +150,56 @@ export default function JobDetails() {
     );
   };
 
-  // Format time ago
-  const getTimeAgo = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMins / 60);
-    const diffDays = Math.floor(diffHours / 24);
 
-    if (diffMins < 1) return "Just now";
-    if (diffMins < 60) return `${diffMins} min ago`;
-    if (diffHours < 24)
-      return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
-    return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
+
+ 
+  const handleCancelJob = async () => {
+    Alert.alert(
+      "Cancel Job",
+      "Are you sure you want to cancel this job? This action cannot be undone.",
+      [
+        {
+          text: "No",
+          style: "cancel",
+        },
+        {
+          text: "Yes, Cancel",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              // Cancel job by setting status to cancelled
+              const { error } = await supabase
+                .from("service_requests")
+                .update({ status: "cancelled" })
+                .eq("id", requestId)
+                .eq("status", "accepted");
+
+              if (error) throw error;
+
+              Alert.alert(
+                "Job Cancelled",
+                "The job has been cancelled successfully.",
+                [
+                  {
+                    text: "OK",
+                    onPress: () => router.back(),
+                  },
+                ]
+              );
+            } catch (err) {
+              Alert.alert(
+                "Error",
+                "Failed to cancel job. Please try again.",
+                [{ text: "OK" }]
+              );
+            }
+          },
+        },
+      ]
+    );
   };
 
-  // Format full date and time
-  const formatDateTime = (dateString: string) => {
-    const date = new Date(dateString);
 
-    // Format: "Mon, Jan 15, 2025 at 2:30 PM"
-    const options: Intl.DateTimeFormatOptions = {
-      weekday: "short",
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    };
-
-    return date.toLocaleString("en-US", options);
-  };
 
   if (isLoading) {
     return (
@@ -227,6 +251,7 @@ export default function JobDetails() {
   const statusConfig = {
     pending: { bg: "bg-yellow-50", text: "text-yellow-700", label: "Pending" },
     accepted: { bg: "bg-green-50", text: "text-green-700", label: "Accepted" },
+    in_progress: { bg: "bg-blue-50", text: "text-blue-700", label: "In Progress" },
     rejected: { bg: "bg-red-50", text: "text-red-700", label: "Rejected" },
     completed: {
       bg: "bg-purple-50",
@@ -239,7 +264,7 @@ export default function JobDetails() {
 
   const hasValidCoordinates = request.location_lat && request.location_lng;
   const isProcessing = isAccepting || isDeclining;
-  const showActionButtons = request.status === 'pending';
+  const showActionButtons = request.status === 'pending' || request.status === 'accepted';
 
   return (
     <SafeAreaView edges={["top"]} className="flex-1 bg-white">
@@ -410,36 +435,64 @@ export default function JobDetails() {
         </View>
       </ScrollView>
 
-      {/* Fixed Bottom Action Buttons - Only show for pending requests */}
+      {/* Fixed Bottom Action Buttons */}
       {showActionButtons && (
         <View className="absolute bottom-1 left-0 right-0 bg-white border-t border-gray-100 px-6 py-4">
-          <View className="flex-row gap-3">
-            <TouchableOpacity
-              onPress={handleDeclineJob}
-              disabled={isProcessing}
-              className={`flex-1 ${isProcessing ? 'bg-gray-50' : 'bg-gray-100'} py-4 rounded-full items-center justify-center`}
-            >
-              {isDeclining ? (
-                <ActivityIndicator color="#000" />
-              ) : (
-                <Text className="text-black font-bold">Decline</Text>
-              )}
-            </TouchableOpacity>
+          {request.status === 'pending' && (
+            <View className="flex-row gap-3">
+              <TouchableOpacity
+                onPress={handleDeclineJob}
+                disabled={isProcessing}
+                className={`flex-1 ${isProcessing ? 'bg-gray-50' : 'bg-gray-100'} py-4 rounded-full items-center justify-center`}
+              >
+                {isDeclining ? (
+                  <ActivityIndicator color="#000" />
+                ) : (
+                  <Text className="text-black font-bold">Decline</Text>
+                )}
+              </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={handleAcceptJob}
-              disabled={isProcessing}
-              className={`flex-1 ${isProcessing ? 'bg-gray-800' : 'bg-black'} py-4 rounded-full items-center justify-center`}
-            >
-              {isAccepting ? (
-                <ActivityIndicator color="#FFF" />
-              ) : (
-                <Text className="text-white font-bold">Accept Job</Text>
-              )}
-            </TouchableOpacity>
-          </View>
+              <TouchableOpacity
+                onPress={handleAcceptJob}
+                disabled={isProcessing}
+                className={`flex-1 ${isProcessing ? 'bg-gray-800' : 'bg-black'} py-4 rounded-full items-center justify-center`}
+              >
+                {isAccepting ? (
+                  <ActivityIndicator color="#FFF" />
+                ) : (
+                  <Text className="text-white font-bold">Accept Job</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {request.status === 'accepted' && (
+            <View className="flex-row gap-3">
+              <TouchableOpacity
+                onPress={handleCancelJob}
+                disabled={isProcessing}
+                className={`flex-1 ${isProcessing ? 'bg-gray-50' : 'bg-gray-100'} py-4 rounded-full items-center justify-center`}
+              >
+                <Text className="text-black font-bold">Cancel Job</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => setShowStartJob(true)}
+                disabled={isProcessing}
+                className={`flex-1 ${isProcessing ? 'bg-gray-800' : 'bg-black'} py-4 rounded-full items-center justify-center`}
+              >
+                {isStarting ? (
+                  <ActivityIndicator color="#FFF" />
+                ) : (
+                  <Text className="text-white font-bold">Start Job</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
       )}
+
+      <StartJobSheet requestId={request.id}/>
     </SafeAreaView>
   );
 }

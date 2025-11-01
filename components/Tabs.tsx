@@ -1,6 +1,6 @@
-import React from 'react';
-import { View, TouchableOpacity, ScrollView } from 'react-native';
 import { Text } from '@/components/ui/text';
+import React from 'react';
+import { ScrollView, TouchableOpacity, View } from 'react-native';
 
 export interface Tab {
   id: string;
@@ -31,13 +31,17 @@ export const Tabs: React.FC<TabsProps> = ({
       >
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
+          console.log('is tab active', isActive, tab, activeTab)
           return (
-            <TouchableOpacity
+            <View
               key={tab.id}
-              onPress={() => onTabChange(tab.id)}
-              className={`px-4 py-2.5 rounded-full ${
+             className={`px-4 py-2.5 rounded-full ${
                 isActive ? 'bg-black' : 'bg-gray-100'
               }`}
+            >
+              <TouchableOpacity
+              onPress={() => onTabChange(tab.id)}
+          
             >
               <Text
                 className={`font-dmsans-medium text-sm ${
@@ -48,6 +52,7 @@ export const Tabs: React.FC<TabsProps> = ({
                 {tab.count !== undefined && ` (${tab.count})`}
               </Text>
             </TouchableOpacity>
+            </View>
           );
         })}
       </ScrollView>

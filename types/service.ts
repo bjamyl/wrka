@@ -19,13 +19,15 @@ export type ServiceRequest = {
   location_address: string;
   location_lat: number;
   location_lng: number;
-  status: "pending" | "accepted" | "rejected" | "completed" | "cancelled";
+  status: "pending" | "accepted" | "in_progress" | "rejected" | "completed" | "cancelled";
   scheduled_time: string;
   final_cost: number | null;
   accepted_at: string | null;
   estimated_cost: number | null;
   priority: "low" | "normal" | "urgent";
   created_at: string;
+  started_at: string;
+  completed_at:string
   updated_at: string;
 };
 
@@ -38,5 +40,5 @@ export type ServiceRequestWithDetails = ServiceRequest & {
     phone_number?: string;
   };
   category?: ServiceCategory;
-  distance_km?: number; // Calculated distance from handyman
+  distance_km?: number; 
 };
