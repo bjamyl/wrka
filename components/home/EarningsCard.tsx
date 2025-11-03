@@ -37,7 +37,7 @@ export default function EarningsCard({
           <View className="mt-3">
             <View>
               <Text className="font-dmsans-bold text-3xl text-gray-700">
-                {statsValue}
+                GHS {statsValue}
               </Text>
             </View>
           </View>

@@ -58,7 +58,7 @@ export default function StartJobSheet({requestId}:{requestId:string}){
     };
   
   return (
-     <Actionsheet isOpen={showStartJob} onClose={() => setShowStartJob(false)}>
+     <Actionsheet snapPoints={[90]} isOpen={showStartJob} onClose={() => setShowStartJob(false)}>
         <ActionsheetBackdrop />
         <ActionsheetContent>
           <ActionsheetDragIndicatorWrapper>

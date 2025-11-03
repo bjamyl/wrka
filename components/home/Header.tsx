@@ -6,6 +6,7 @@ import {
 } from "@/components/ui/avatar";
 import React from "react";
 import { Text, View } from "react-native";
+import {  Bell } from "lucide-react-native";
 
 type HeaderProps = {
   firstName: string;
@@ -19,9 +20,9 @@ export default function Header({
   isAvailable,
 }: HeaderProps) {
   return (
-    <View>
+    <View className="flex flex-row justify-between">
       <View className="flex flex-row gap-2">
-        <Avatar size="md">
+        <Avatar size="sm">
           <AvatarFallbackText>{firstName}</AvatarFallbackText>
           <AvatarImage
             source={{
@@ -36,6 +37,10 @@ export default function Header({
             Let&apos;s get to work!
           </Text>
         </View>
+      </View>
+      <View className="relative">
+        <Bell/>
+        <View className="bg-red-500 w-2 h-2 rounded-full absolute right-[2px]"></View>
       </View>
     </View>
   );

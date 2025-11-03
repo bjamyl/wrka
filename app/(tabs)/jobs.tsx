@@ -1,7 +1,5 @@
 import { Tabs } from "@/components/Tabs";
-import { Heading } from "@/components/ui/heading";
 import { JobCardSkeleton } from "@/components/ui/Skeleton";
-import { Text } from "@/components/ui/text";
 import { useHandymanJobCounts, useHandymanJobs } from "@/hooks/useHandymanJobs";
 import { formatScheduledTime, getTimeAgo } from "@/lib/transformers";
 import { useRouter } from "expo-router";
@@ -17,9 +15,14 @@ import {
   Wrench,
 } from "lucide-react-native";
 import React, { useState } from "react";
-import { RefreshControl, ScrollView, TouchableOpacity, View } from "react-native";
+import {
+  RefreshControl,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
 
 // Dynamically get icon component from Lucide by name
 const getIconComponent = (iconName: string) => {
@@ -29,22 +32,23 @@ const getIconComponent = (iconName: string) => {
 
 export default function Jobs() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'accepted' | 'active' | 'completed'>('accepted');
+  const [activeTab, setActiveTab] = useState<
+    "accepted" | "active" | "completed"
+  >("accepted");
   const { acceptedCount, activeCount, completedCount } = useHandymanJobCounts();
 
-  
   const statusMap = {
-    accepted: 'accepted' as const,
-    active: 'in_progress' as const,
-    completed: 'completed' as const,
+    accepted: "accepted" as const,
+    active: "in_progress" as const,
+    completed: "completed" as const,
   };
 
   const { jobs, loading, refetch } = useHandymanJobs(statusMap[activeTab]);
 
   const tabs = [
-    { id: 'accepted' as const, label: 'Accepted', count: acceptedCount },
-    { id: 'active' as const, label: 'Active', count: activeCount },
-    { id: 'completed' as const, label: 'Completed', count: completedCount },
+    { id: "accepted" as const, label: "Accepted", count: acceptedCount },
+    { id: "active" as const, label: "Active", count: activeCount },
+    { id: "completed" as const, label: "Completed", count: completedCount },
   ];
 
   const handleJobPress = (jobId: string) => {
@@ -54,24 +58,25 @@ export default function Jobs() {
     });
   };
 
-  
-
   // Render empty state based on active tab
   const renderEmptyState = () => {
     const emptyStates = {
       accepted: {
         title: "No Accepted Jobs",
-        description: "Jobs you accept will appear here. Browse available jobs on the home screen to get started.",
+        description:
+          "Jobs you accept will appear here. Browse available jobs on the home screen to get started.",
         icon: CheckCircle,
       },
       active: {
         title: "No Active Jobs",
-        description: "You don't have any jobs in progress. Start working on an accepted job to see it here.",
+        description:
+          "You don't have any jobs in progress. Start working on an accepted job to see it here.",
         icon: PlayCircle,
       },
       completed: {
         title: "No Completed Jobs Yet",
-        description: "Jobs you complete will be listed here. Keep up the great work!",
+        description:
+          "Jobs you complete will be listed here. Keep up the great work!",
         icon: Inbox,
       },
     };
@@ -85,11 +90,11 @@ export default function Jobs() {
           <Icon size={32} color="#9CA3AF" />
         </View>
 
-        <Heading size="lg" className="text-black mb-2 text-center">
+        <Text className="mb-2 text-2xl font-dmsans-bold text-center">
           {state.title}
-        </Heading>
+        </Text>
 
-        <Text className="text-gray-500 text-center px-4">
+        <Text className="text-gray-500 font-dmsans text-center px-4">
           {state.description}
         </Text>
       </View>
@@ -106,10 +111,8 @@ export default function Jobs() {
         }
       >
         <View className="px-6 py-4 bg-white mb-4">
-          <Heading size="2xl" className="text-black mb-2">
-            My Jobs
-          </Heading>
-          <Text size="md" className="text-gray-600">
+          <Text className="font-dmsans-bold text-3xl mb-2">My Jobs</Text>
+          <Text className="text-gray-600 font-dmsans">
             Track your accepted, active and completed requests
           </Text>
         </View>
@@ -159,10 +162,10 @@ export default function Jobs() {
                             })}
                           </View>
                           <View className="flex-1">
-                            <Heading size="sm" className="text-black">
+                            <Text  className="text-black text-xl font-dmsans">
                               {job.title}
-                            </Heading>
-                            <Text size="xs" className="text-gray-500 mt-0.5">
+                            </Text>
+                            <Text className="text-gray-500 mt-0.5 font-dmsans">
                               {job.location_address}
                             </Text>
                           </View>
@@ -170,36 +173,30 @@ export default function Jobs() {
                       </View>
                       {isUrgent && (
                         <View className="bg-red-50 px-2 py-1 rounded-full">
-                          <Text size="xs" className="text-red-600 font-semibold">
+                          <Text className="text-red-600 font-semibold">
                             Urgent
                           </Text>
                         </View>
                       )}
                     </View>
 
-                    {/* Description */}
-                    <Text size="sm" className="text-gray-600 mb-3">
-                      {job.description}
-                    </Text>
-
                     {/* Customer Info */}
                     {job.customer && (
-                      <View className="bg-gray-50 rounded-xl p-3 mb-3">
+                      <View className="bg-gray-100 rounded-2xl px-6 py-2 mb-3">
                         <View className="flex-row items-center justify-between">
                           <View className="flex-1">
-                            <Text size="xs" className="text-gray-500 mb-1">
-                              Customer
-                            </Text>
-                            <Text size="sm" className="text-black font-semibold">
+                            <Text className="text-black text-lg font-dmsans-bold ">
                               {job.customer.full_name}
                             </Text>
+                            {job.customer.phone_number && (
+                              <Text className="text-gray-500 text-xs font-dmsans mb-1">
+                                {job.customer.phone_number}
+                              </Text>
+                            )}
                           </View>
                           {job.customer.phone_number && (
-                            <TouchableOpacity className="bg-black px-4 py-2 rounded-full flex-row items-center gap-2">
+                            <TouchableOpacity className="bg-black p-4 rounded-full flex-row items-center gap-2">
                               <Phone size={14} color="#FFFFFF" />
-                              <Text size="xs" className="text-white font-semibold">
-                                Call
-                              </Text>
                             </TouchableOpacity>
                           )}
                         </View>
@@ -207,46 +204,57 @@ export default function Jobs() {
                     )}
 
                     {/* Scheduled Time */}
-                    {job.scheduled_time && (
-                      <View className="bg-blue-50 px-4 py-3 rounded-xl mb-3 border border-blue-200">
-                        <View className="flex-row items-center gap-2">
-                          <Calendar size={16} color="#3B82F6" />
-                          <Text className="text-blue-600 text-xs">
-                            Scheduled:
-                          </Text>
-                          <Text className="text-blue-900 font-semibold text-sm">
-                            {formatScheduledTime(job.scheduled_time)}
-                          </Text>
-                        </View>
-                      </View>
-                    )}
 
                     {/* Meta Info */}
                     <View className="flex-row items-center gap-4 mb-3">
                       {job.distance_km !== undefined && (
                         <View className="flex-row items-center gap-1">
                           <MapPin size={16} color="#6B7280" />
-                          <Text size="sm" className="text-gray-600">
+                          <Text className="text-gray-600">
                             {job.distance_km} km
                           </Text>
                         </View>
                       )}
-                      <View className="flex-row items-center gap-1">
-                        <Clock size={16} color="#6B7280" />
-                        <Text size="sm" className="text-gray-600">
-                          {activeTab === 'accepted' && `Accepted ${getTimeAgo(job.accepted_at || job.created_at)}`}
-                          {activeTab === 'active' && `Started ${getTimeAgo(job.started_at || job.accepted_at || job.created_at)}`}
-                          {activeTab === 'completed' && `Completed ${getTimeAgo(job.completed_at || job.created_at)}`}
-                        </Text>
+                      <View className="flex gap-2">
+                        <View className="flex-row items-center gap-1">
+                          <Clock size={16} color="#6B7280" />
+                          <Text className="text-gray-600">
+                            {activeTab === "accepted" &&
+                              `Accepted ${getTimeAgo(
+                                job.accepted_at || job.created_at
+                              )}`}
+                            {activeTab === "active" &&
+                              `Started ${getTimeAgo(
+                                job.started_at ||
+                                  job.accepted_at ||
+                                  job.created_at
+                              )}`}
+                            {activeTab === "completed" &&
+                              `Completed ${getTimeAgo(
+                                job.completed_at || job.created_at
+                              )}`}
+                          </Text>
+                        </View>
+                        {job.scheduled_time && (
+                          <View className="flex-row items-center gap-1">
+                            <Calendar size={16} color="#6B7280" />
+                            <Text className="text-gray-600">
+                              Scheduled:
+                            </Text>
+                            <Text className="text-gray-600">
+                              {formatScheduledTime(job.scheduled_time)}
+                            </Text>
+                          </View>
+                        )}
                       </View>
                     </View>
 
                     {/* Action Button */}
                     <TouchableOpacity
                       onPress={() => handleJobPress(job.id)}
-                      className="bg-black py-3 rounded-full items-center"
+                      className="bg-black py-4 mt-5 rounded-full items-center"
                     >
-                      <Text size="sm" className="text-white font-semibold">
+                      <Text className="text-white font-semibold">
                         View Details
                       </Text>
                     </TouchableOpacity>

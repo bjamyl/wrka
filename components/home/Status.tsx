@@ -6,8 +6,8 @@ type StatusProps = {
 
 export default function Status({ isAvailable }: StatusProps) {
   return (
-    <View className="my-4">
-      <Text className="text-2xl font-dmsans-bold">
+    <View className="mb-4 mt-8">
+      <Text className="text-xl font-dmsans-bold">
         {isAvailable ? "Available for work" : "Not accepting jobs"}
       </Text>
       <Text className="text-gray-500 font-dmsans">

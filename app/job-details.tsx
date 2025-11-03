@@ -1,3 +1,4 @@
+import JobInProgressCard from "@/components/jobs/JobInProgressCard";
 import StartJobSheet from "@/components/jobs/StartJobSheet";
 import { Heading } from "@/components/ui/heading";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -77,7 +78,6 @@ export default function JobDetails() {
   const params = useLocalSearchParams();
   const requestId = params.requestId as string;
 
-
   const {
     acceptRequestAsync,
     isAccepting,
@@ -87,12 +87,11 @@ export default function JobDetails() {
     declineError,
   } = useServiceRequests();
 
-
-
   const {
     data: request,
     isLoading,
     error,
+    refetch,
   } = useQuery({
     queryKey: ["service-request", requestId],
     queryFn: () => fetchServiceRequestDetails(requestId),
@@ -150,9 +149,6 @@ export default function JobDetails() {
     );
   };
 
-
-
- 
   const handleCancelJob = async () => {
     Alert.alert(
       "Cancel Job",
@@ -199,7 +195,10 @@ export default function JobDetails() {
     );
   };
 
-
+  const handleJobFinished = () => {
+    refetch();
+    router.back();
+  };
 
   if (isLoading) {
     return (
@@ -265,6 +264,7 @@ export default function JobDetails() {
   const hasValidCoordinates = request.location_lat && request.location_lng;
   const isProcessing = isAccepting || isDeclining;
   const showActionButtons = request.status === 'pending' || request.status === 'accepted';
+  const isInProgress = request.status === 'in_progress';
 
   return (
     <SafeAreaView edges={["top"]} className="flex-1 bg-white">
@@ -282,6 +282,16 @@ export default function JobDetails() {
         className="flex-1"
         contentContainerStyle={{ paddingBottom: showActionButtons ? 120 : 20 }}
       >
+        {isInProgress && request.started_at && (
+          <View className="pt-6">
+            <JobInProgressCard
+              requestId={request.id}
+              startedAt={request.started_at}
+              onJobFinished={handleJobFinished}
+            />
+          </View>
+        )}
+
         <View className="px-6 pt-6">
           {/* Category & Priority Badges */}
           <View className="flex-row items-center gap-2 mb-4">

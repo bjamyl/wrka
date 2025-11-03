@@ -1,6 +1,5 @@
-import { Text } from '@/components/ui/text';
 import React from 'react';
-import { ScrollView, TouchableOpacity, View } from 'react-native';
+import { ScrollView, TouchableOpacity, View,Text } from 'react-native';
 
 export interface Tab {
   id: string;
@@ -26,16 +25,15 @@ export const Tabs: React.FC<TabsProps> = ({
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 24, gap: 8 }}
-        className="mb-6"
+        contentContainerStyle={{display:"flex", flexDirection:"row", justifyContent:"space-between", width:"100%" }}
+        className="mb-6 flex flex-row"
       >
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
-          console.log('is tab active', isActive, tab, activeTab)
           return (
             <View
               key={tab.id}
-             className={`px-4 py-2.5 rounded-full ${
+             className={`px-6 py-3 rounded-full ${
                 isActive ? 'bg-black' : 'bg-gray-100'
               }`}
             >
@@ -45,7 +43,7 @@ export const Tabs: React.FC<TabsProps> = ({
             >
               <Text
                 className={`font-dmsans-medium text-sm ${
-                  isActive ? 'text-white' : 'text-gray-600'
+                  isActive ? 'text-[#ffff]' : 'text-gray-600'
                 }`}
               >
                 {tab.label}
