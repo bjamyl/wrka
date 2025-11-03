@@ -2,26 +2,32 @@ import { Text } from "@/components/ui/text";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { BlurView } from "expo-blur";
 import * as Haptics from "expo-haptics";
-import { Briefcase, DollarSign, Home, MessageSquare, User } from "lucide-react-native";
+import {
+  BriefcaseBusiness,
+  Coins,
+  Home,
+  MessageCircleMore,
+  UserRound,
+} from "lucide-react-native";
 import { useEffect } from "react";
 import { Platform, TouchableOpacity, View } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
-  withSpring
+  withSpring,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const ICON_SIZE = 20;
-const ICON_SIZE_FOCUSED = 24;
+const ICON_SIZE_FOCUSED = 20.5;
 const TAB_BAR_HEIGHT = 70;
 
 const iconMap = {
   index: Home,
-  jobs: Briefcase,
-  messages: MessageSquare,
-  earnings: DollarSign,
-  profile: User,
+  jobs: BriefcaseBusiness,
+  messages: MessageCircleMore,
+  earnings: Coins,
+  profile: UserRound,
 };
 
 const springConfig = {
@@ -55,7 +61,6 @@ function TabBarButton({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isFocused]);
 
-
   const animatedIconStyle = useAnimatedStyle(() => ({
     transform: [
       { scale: iconScale.value * scale.value },
@@ -83,7 +88,6 @@ function TabBarButton({
   };
 
   const IconComponent = iconMap[route.name as keyof typeof iconMap] || Home;
-  const iconColor = isFocused ? "#000000" : "#6B7280";
 
   return (
     <TouchableOpacity
@@ -101,16 +105,15 @@ function TabBarButton({
         <Animated.View style={animatedIconStyle} className="items-center">
           <IconComponent
             size={isFocused ? ICON_SIZE_FOCUSED : ICON_SIZE}
-            color={iconColor}
-            fill={isFocused ? iconColor : "none"}
-            strokeWidth={isFocused ? 0 : 2}
+            color={isFocused ? "#000000" : "#6B7280"}
+            strokeWidth={isFocused ? 2.1 : 2} 
           />
         </Animated.View>
 
         <View className="mt-1">
           <Text
             className="text-[10px] font-bold"
-            style={{ color: isFocused ? '#000000' : '#6B7280' }}
+            style={{ color: isFocused ? "#000000" : "#6B7280" }}
           >
             {label}
           </Text>
@@ -120,7 +123,11 @@ function TabBarButton({
   );
 }
 
-export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
+export function CustomTabBar({
+  state,
+  descriptors,
+  navigation,
+}: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
 
   return (
@@ -138,69 +145,11 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
             style={{
               height: TAB_BAR_HEIGHT,
               borderRadius: 32,
-              overflow: 'hidden',
+              overflow: "hidden",
               shadowColor: "#000",
               shadowOffset: { width: 0, height: 4 },
               shadowOpacity: 0.08,
               shadowRadius: 20,
-            }}
-          >
-          <View className="flex-row h-full">
-            {state.routes.map((route, index) => {
-              const { options } = descriptors[route.key];
-              const label =
-                options.tabBarLabel !== undefined
-                  ? options.tabBarLabel
-                  : options.title !== undefined
-                  ? options.title
-                  : route.name;
-
-              const isFocused = state.index === index;
-
-              const onPress = () => {
-                const event = navigation.emit({
-                  type: "tabPress",
-                  target: route.key,
-                  canPreventDefault: true,
-                });
-
-                if (!isFocused && !event.defaultPrevented) {
-                  navigation.navigate(route.name, route.params);
-                }
-              };
-
-              const onLongPress = () => {
-                navigation.emit({
-                  type: "tabLongPress",
-                  target: route.key,
-                });
-              };
-
-              return (
-                <TabBarButton
-                  key={route.key}
-                  route={route}
-                  isFocused={isFocused}
-                  onPress={onPress}
-                  onLongPress={onLongPress}
-                  label={label as string}
-                />
-              );
-            })}
-          </View>
-        </BlurView>
-        ) : (
-          <View
-            style={{
-              height: TAB_BAR_HEIGHT,
-              borderRadius: 32,
-              overflow: 'hidden',
-              backgroundColor: "#FFFFFF",
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.08,
-              shadowRadius: 20,
-              elevation: 8,
             }}
           >
             <View className="flex-row h-full">
@@ -223,7 +172,65 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
                   });
 
                   if (!isFocused && !event.defaultPrevented) {
-                  navigation.navigate(route.name, route.params);
+                    navigation.navigate(route.name, route.params);
+                  }
+                };
+
+                const onLongPress = () => {
+                  navigation.emit({
+                    type: "tabLongPress",
+                    target: route.key,
+                  });
+                };
+
+                return (
+                  <TabBarButton
+                    key={route.key}
+                    route={route}
+                    isFocused={isFocused}
+                    onPress={onPress}
+                    onLongPress={onLongPress}
+                    label={label as string}
+                  />
+                );
+              })}
+            </View>
+          </BlurView>
+        ) : (
+          <View
+            style={{
+              height: TAB_BAR_HEIGHT,
+              borderRadius: 60,
+              overflow: "hidden",
+              backgroundColor: "#FFFFFF",
+              shadowColor: "#000",
+              shadowOffset: { width: 4, height: 4 },
+              shadowOpacity: 0.02,
+              shadowRadius: 50,
+              elevation: 5,
+            }}
+          >
+            <View className="flex-row h-full">
+              {state.routes.map((route, index) => {
+                const { options } = descriptors[route.key];
+                const label =
+                  options.tabBarLabel !== undefined
+                    ? options.tabBarLabel
+                    : options.title !== undefined
+                    ? options.title
+                    : route.name;
+
+                const isFocused = state.index === index;
+
+                const onPress = () => {
+                  const event = navigation.emit({
+                    type: "tabPress",
+                    target: route.key,
+                    canPreventDefault: true,
+                  });
+
+                  if (!isFocused && !event.defaultPrevented) {
+                    navigation.navigate(route.name, route.params);
                   }
                 };
 

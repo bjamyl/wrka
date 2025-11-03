@@ -1,3 +1,6 @@
+import DashboardLayout from "@/components/home/DashboardLayout";
+import Header from "@/components/home/Header";
+import Status from "@/components/home/Status";
 import { Heading } from "@/components/ui/heading";
 import {
   CategorySkeleton,
@@ -13,13 +16,10 @@ import * as LucideIcons from "lucide-react-native";
 import {
   Calendar,
   Clock,
-  DollarSign,
   Filter,
   Inbox,
   MapPin,
   RefreshCw,
-  Star,
-  TrendingUp,
   Wrench,
 } from "lucide-react-native";
 import React, { useState } from "react";
@@ -46,7 +46,7 @@ export default function Home() {
   const { categories, loading: categoriesLoading } = useServiceCategories();
   const [isAvailable, setIsAvailable] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string | undefined>(
-    undefined,
+    undefined
   );
 
   // Fetch service requests based on selected category
@@ -110,8 +110,8 @@ export default function Home() {
       >
         {/* Header Section */}
         <View className="px-6 py-4 bg-white">
-          <View className="flex-row items-center justify-between mb-4">
-            <View className="flex-1">
+          <View className="flex-col my-4">
+            <View>
               {profileLoading ? (
                 <View>
                   <Skeleton
@@ -122,25 +122,11 @@ export default function Home() {
                   <Skeleton width={150} height={16} />
                 </View>
               ) : (
-                <View>
-                  <Heading size="xl" className="text-black">
-                    Welcome back, {firstName}
-                  </Heading>
-                  <Text size="sm" className="text-gray-500 mt-1">
-                    Ready to work today?
-                  </Text>
-                </View>
+                <Header firstName={firstName} isAvailable={isAvailable} />
               )}
             </View>
-            <View className="flex-row items-center gap-2">
-              <Text
-                size="sm"
-                className={
-                  isAvailable ? "text-green-600 font-medium" : "text-gray-500"
-                }
-              >
-                {isAvailable ? "Available" : "Offline"}
-              </Text>
+            <View className="flex-row items-center justify-between">
+              <Status isAvailable={isAvailable} />
               <Switch
                 value={isAvailable}
                 onValueChange={setIsAvailable}
@@ -151,50 +137,19 @@ export default function Home() {
           </View>
 
           {/* Quick Stats */}
-          <View className="flex-row gap-3">
-            <View className="flex-1 bg-gray-50 rounded-2xl p-4">
-              <View className="flex-row items-center gap-2 mb-1">
-                <DollarSign size={16} color="#10B981" />
-                <Text size="xs" className="text-gray-600">
-                  Today
-                </Text>
-              </View>
-              <Heading size="lg" className="text-black">
-                ₵{HANDYMAN_STATS.todayEarnings}
-              </Heading>
-            </View>
-
-            <View className="flex-1 bg-gray-50 rounded-2xl p-4">
-              <View className="flex-row items-center gap-2 mb-1">
-                <TrendingUp size={16} color="#3B82F6" />
-                <Text size="xs" className="text-gray-600">
-                  Active
-                </Text>
-              </View>
-              <Heading size="lg" className="text-black">
-                {HANDYMAN_STATS.activeJobs}
-              </Heading>
-            </View>
-
-            <View className="flex-1 bg-gray-50 rounded-2xl p-4">
-              <View className="flex-row items-center gap-2 mb-1">
-                <Star size={16} color="#F59E0B" />
-                <Text size="xs" className="text-gray-600">
-                  Rating
-                </Text>
-              </View>
-              <Heading size="lg" className="text-black">
-                {HANDYMAN_STATS.rating}
-              </Heading>
-            </View>
-          </View>
+          <DashboardLayout
+            earnings={HANDYMAN_STATS.todayEarnings}
+            active={HANDYMAN_STATS.activeJobs}
+            rating={HANDYMAN_STATS.rating}
+            completedJobs={HANDYMAN_STATS.completedJobs}
+          />
         </View>
 
         {/* Job Categories */}
         <View className="px-6 py-4">
-          <Heading size="md" className="text-black mb-3">
+          <Text  className="text-black mb-3 font-dmsans-semibold text-xl">
             Categories
-          </Heading>
+          </Text>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -220,7 +175,9 @@ export default function Home() {
                   />
                   <Text
                     size="sm"
-                    className={`font-medium ${!selectedCategory ? "text-white" : "text-gray-700"}`}
+                    className={`font-medium ${
+                      !selectedCategory ? "text-white" : "text-gray-700"
+                    }`}
                   >
                     All
                   </Text>
@@ -246,7 +203,9 @@ export default function Home() {
                       />
                       <Text
                         size="sm"
-                        className={`font-medium ${isSelected ? "text-white" : "text-gray-700"}`}
+                        className={`font-medium ${
+                          isSelected ? "text-white" : "text-gray-700"
+                        }`}
                       >
                         {category.name}
                       </Text>
@@ -434,7 +393,6 @@ export default function Home() {
                       )}
 
                       <View className="flex-row items-center gap-4 mb-3">
-                        
                         {request.distance_km !== undefined && (
                           <View className="flex-row items-center gap-1">
                             <MapPin size={16} color="#6B7280" />
