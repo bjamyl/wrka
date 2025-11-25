@@ -135,7 +135,6 @@ export default function Home() {
               />
             </View>
           </View>
-
           {/* Quick Stats */}
           <DashboardLayout
             earnings={HANDYMAN_STATS.todayEarnings}

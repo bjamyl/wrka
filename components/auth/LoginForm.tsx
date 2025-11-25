@@ -7,6 +7,7 @@ import { useRouter } from "expo-router";
 import { Eye, EyeOff } from "lucide-react-native";
 import { useState } from "react";
 import { TouchableOpacity, View } from "react-native";
+import { FormError } from "../ui/FormError";
 
 export default function LoginForm() {
   const router = useRouter();
@@ -16,18 +17,35 @@ export default function LoginForm() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleSignUp = async () => {
-    if (password.length < 6) {
-      alert("Password must be at least 6 characters");
+  // 1. New error state
+  const [error, setError] = useState("");
+
+  // Helper to clear errors when user types
+  const onInputChange = (setter: (val: string) => void) => (val: string) => {
+    setter(val);
+    if (error) setError("");
+  };
+
+  const handleSignIn = async () => {
+    setError(""); // Clear previous errors
+
+    if (!email || !password) {
+      setError("Please enter both email and password");
       return;
     }
 
-    const { data, error } = await signIn(email, password);
+    const { data, error: signInError } = await signIn(email, password);
 
-    if (data && !error) {
+    if (signInError) {
+      setError(signInError.message);
+      return;
+    }
+
+    if (data) {
       router.replace("/(tabs)");
     }
   };
+
   return (
     <>
       <VStack space="lg" className="mb-6">
@@ -36,11 +54,15 @@ export default function LoginForm() {
           <Text className="text-sm font-dmsans-medium text-gray-700 mb-1">
             Email
           </Text>
-          <Input className="border border-gray-300 rounded-xl h-14">
+          <Input
+            className={`border rounded-xl h-14 ${
+              error ? "border-red-300" : "border-gray-300"
+            }`}
+          >
             <InputField
               placeholder="Enter your email"
               value={email}
-              onChangeText={setEmail}
+              onChangeText={onInputChange(setEmail)}
               autoCapitalize="none"
               keyboardType="email-address"
               className="font-dmsans"
@@ -53,11 +75,15 @@ export default function LoginForm() {
           <Text className="text-sm font-dmsans-medium text-gray-700 mb-1">
             Password
           </Text>
-          <Input className="border border-gray-300 rounded-xl h-14">
+          <Input
+            className={`border rounded-xl h-14 ${
+              error ? "border-red-300" : "border-gray-300"
+            }`}
+          >
             <InputField
-              placeholder="Create a password"
+              placeholder="Enter your password"
               value={password}
-              onChangeText={setPassword}
+              onChangeText={onInputChange(setPassword)}
               secureTextEntry={!showPassword}
               autoCapitalize="none"
               className="font-dmsans"
@@ -75,11 +101,14 @@ export default function LoginForm() {
         </VStack>
       </VStack>
 
-      {/* Sign In Button */}
+    
+      {error ? <FormError message={error} /> : null}
+
+    
       <Button
         size="lg"
         className="bg-black rounded-full h-14 mb-4"
-        onPress={handleSignUp}
+        onPress={handleSignIn}
         disabled={loading}
       >
         <ButtonText className="text-base font-semibold text-white">

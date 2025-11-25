@@ -1,17 +1,7 @@
+import { Button, ButtonIcon, ButtonText } from "@/components/ui/button";
 import { ChevronDownIcon } from "@/components/ui/icon";
-import {
-  Select,
-  SelectBackdrop,
-  SelectContent,
-  SelectDragIndicator,
-  SelectDragIndicatorWrapper,
-  SelectIcon,
-  SelectInput,
-  SelectItem,
-  SelectPortal,
-  SelectTrigger,
-} from "@/components/ui/select";
-import React from "react";
+import { Menu, MenuItem, MenuItemLabel } from "@/components/ui/menu";
+import React, { useState } from "react";
 import { Text, View } from "react-native";
 
 type EarningsCardProps = {
@@ -25,13 +15,20 @@ export default function EarningsCard({
   title,
   statsValue,
 }: EarningsCardProps) {
+  const [selectedTime, setSelectedTime] = useState("All time");
+
+  const handleSelect = (value: string, label: string) => {
+    setSelectedTime(label);
+    // TODO: Add data fetching logic based on 'value'
+    console.log("Selected value:", value);
+  };
+
   return (
     <View className="border border-gray-200 rounded-xl p-5">
-      <View className="flex flex-row justify-between">
+      <View className="flex flex-row justify-between items-center">
         <View>
           <View className="flex flex-row items-center">
             <View>{icon}</View>
-
             <Text className="font-dmsans-semibold text-lg ml-2">{title}</Text>
           </View>
           <View className="mt-3">
@@ -42,26 +39,57 @@ export default function EarningsCard({
             </View>
           </View>
         </View>
-        <Select>
-          <SelectTrigger variant="outline" size="md" className="rounded-xl">
-            <SelectInput placeholder="All time" />
-            <SelectIcon className="mr-3" as={ChevronDownIcon} />
-          </SelectTrigger>
-          <SelectPortal>
-            <SelectBackdrop />
-            <SelectContent >
-              <SelectDragIndicatorWrapper>
-                <SelectDragIndicator />
-              </SelectDragIndicatorWrapper>
-              <SelectItem label="Last week" value="last_week" />
-              <SelectItem label="Yesterday" value="yesterday" />
-              <SelectItem
-                label="Last Month"
-                value="last_month"
-              />
-            </SelectContent>
-          </SelectPortal>
-        </Select>
+
+        <Menu
+          offset={4}
+          placement="bottom"
+          trigger={(triggerProps) => {
+            return (
+              <Button
+                {...triggerProps}
+                variant="outline"
+                size="md"
+                className="rounded-xl"
+              >
+                <ButtonText>{selectedTime}</ButtonText>
+                <ButtonIcon as={ChevronDownIcon} className="ml-2" />
+              </Button>
+            );
+          }}
+        >
+          <MenuItem
+            key="all_time"
+            textValue="all_time"
+            className="p-2"
+            onPress={() => handleSelect("all_time", "All time")}
+          >
+            <MenuItemLabel size="sm">All time</MenuItemLabel>
+          </MenuItem>
+          <MenuItem
+            key="last_week"
+            textValue="last_week"
+            className="p-2"
+            onPress={() => handleSelect("last_week", "Last week")}
+          >
+            <MenuItemLabel size="sm">Last week</MenuItemLabel>
+          </MenuItem>
+          <MenuItem
+            key="yesterday"
+            textValue="yesterday"
+            className="p-2"
+            onPress={() => handleSelect("yesterday", "Yesterday")}
+          >
+            <MenuItemLabel size="sm">Yesterday</MenuItemLabel>
+          </MenuItem>
+          <MenuItem
+            key="last_month"
+            textValue="last_month"
+            className="p-2"
+            onPress={() => handleSelect("last_month", "Last Month")}
+          >
+            <MenuItemLabel size="sm">Last Month</MenuItemLabel>
+          </MenuItem>
+        </Menu>
       </View>
     </View>
   );

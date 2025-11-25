@@ -1,11 +1,17 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Alert } from 'react-native';
 
-// Mutation functions
+
 const signUpFn = async ({ email, password }: { email: string; password: string }) => {
   const { data, error } = await supabase.auth.signUp({ email, password });
+  console.log('error', error)
+  console.log('sign up success data', data)
   if (error) throw error;
+
+  if (data.user && data.user.identities && data.user.identities.length === 0) {
+    throw new Error('This email is already registered.');
+  }
   return data;
 };
 
@@ -51,7 +57,6 @@ export const useAuth = () => {
   const signUpMutation = useMutation({
     mutationFn: signUpFn,
     onError: (error: any) => {
-      Alert.alert('Sign Up Error', error.message);
       console.log('Sign Up Error:', error);
     },
   });
@@ -64,7 +69,7 @@ export const useAuth = () => {
       queryClient.invalidateQueries({ queryKey: ['handyman-profile'] });
     },
     onError: (error: any) => {
-      Alert.alert('Sign In Error', error.message);
+      console.log('sign in error', error)
     },
   });
 
