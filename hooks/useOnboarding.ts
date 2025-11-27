@@ -1,10 +1,10 @@
-import { useState, useCallback } from "react";
-import { Alert } from "react-native";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "expo-router";
+import { useCallback, useState } from "react";
+import { Alert } from "react-native";
+import type { Certificate } from "../lib/cloudinary";
 import { uploadCertificates } from "../lib/cloudinary";
 import { supabase } from "../lib/supabase";
-import type { Certificate } from "../lib/cloudinary";
-import { useRouter } from "expo-router";
 
 export type ProfileData = {
   full_name: string;
@@ -29,6 +29,7 @@ export type HandymanProfileData = {
   service_radius?: number;
   certified: boolean;
   certificates?: Certificate[];
+  service_categories: string[]
 };
 
 type BasicInfoStep = Pick<
@@ -143,7 +144,6 @@ export const useOnboarding = (): UseOnboardingReturn => {
       if (userError || !user) {
         throw new Error("No authenticated user found");
       }
-
       // Step 1: Upsert profile data
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
@@ -160,6 +160,8 @@ export const useOnboarding = (): UseOnboardingReturn => {
         throw new Error(`Failed to save profile: ${profileError.message}`);
       }
 
+      const {service_categories, ...rest} = completeHandymanData;
+
       const { data: existingHandyman } = await supabase
         .from("handyman_profiles")
         .select("id")
@@ -168,7 +170,7 @@ export const useOnboarding = (): UseOnboardingReturn => {
 
       let handymanData;
       const handymanDataWithCerts = {
-        ...completeHandymanData,
+        ...rest,
         certified: uploadedCertificates.length > 0,
         certificates: uploadedCertificates,
       };
@@ -205,6 +207,37 @@ export const useOnboarding = (): UseOnboardingReturn => {
           );
         }
         handymanData = data;
+      }
+
+      if (service_categories && service_categories.length > 0) {
+        
+        const { error: deleteError } = await supabase
+          .from("handyman_services")
+          .delete()
+          .eq("handyman_id", handymanData.id);
+
+        if (deleteError) {
+          console.error("Error deleting existing services:", deleteError);
+          throw new Error(
+            `Failed to update service categories: ${deleteError.message}`,
+          );
+        }
+     
+        const serviceRecords = service_categories.map((categoryId) => ({
+          handyman_id: handymanData.id,
+          category_id: categoryId,
+        }));
+
+        const { error: insertError } = await supabase
+          .from("handyman_services")
+          .insert(serviceRecords);
+
+        if (insertError) {
+          console.error("Error inserting service categories:", insertError);
+          throw new Error(
+            `Failed to save service categories: ${insertError.message}`,
+          );
+        }
       }
 
       return { profileData, handymanData };

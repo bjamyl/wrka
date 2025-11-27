@@ -11,8 +11,9 @@ import { Text } from "@/components/ui/text";
 import { useProfile } from "@/hooks/useProfile";
 import { useServiceCategories } from "@/hooks/useServiceCategories";
 import { useServiceRequests } from "@/hooks/useServiceRequests";
+import { formatScheduledTime, getTimeAgo } from "@/lib/transformers";
+import { getIconComponent } from "@/lib/utils";
 import { useRouter } from "expo-router";
-import * as LucideIcons from "lucide-react-native";
 import {
   Calendar,
   Clock,
@@ -34,19 +35,13 @@ const HANDYMAN_STATS = {
   completedJobs: 127,
 };
 
-// Dynamically get icon component from Lucide by name
-const getIconComponent = (iconName: string) => {
-  const Icon = (LucideIcons as any)[iconName];
-  return Icon || Wrench; // Fallback to Wrench if icon not found
-};
-
 export default function Home() {
   const router = useRouter();
   const { profile, loading: profileLoading } = useProfile();
   const { categories, loading: categoriesLoading } = useServiceCategories();
   const [isAvailable, setIsAvailable] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string | undefined>(
-    undefined
+    undefined,
   );
 
   // Fetch service requests based on selected category
@@ -71,35 +66,6 @@ export default function Home() {
   const handleRefresh = () => {
     // TODO: Implement pull to refresh
     console.log("Refreshing...");
-  };
-
-  // Format time ago
-  const getTimeAgo = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMins / 60);
-    const diffDays = Math.floor(diffHours / 24);
-
-    if (diffMins < 1) return "Just now";
-    if (diffMins < 60) return `${diffMins} min ago`;
-    if (diffHours < 24)
-      return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
-    return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
-  };
-
-  // Format scheduled time for cards
-  const formatScheduledTime = (dateString: string) => {
-    const date = new Date(dateString);
-    const options: Intl.DateTimeFormatOptions = {
-      month: "short",
-      day: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    };
-    return date.toLocaleString("en-US", options);
   };
 
   return (
@@ -146,7 +112,7 @@ export default function Home() {
 
         {/* Job Categories */}
         <View className="px-6 py-4">
-          <Text  className="text-black mb-3 font-dmsans-semibold text-xl">
+          <Text className="text-black mb-3 font-dmsans-semibold text-xl">
             Categories
           </Text>
           <ScrollView

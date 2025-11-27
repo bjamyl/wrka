@@ -42,6 +42,10 @@ export default function LoginForm() {
     }
 
     if (data) {
+      const profile = data?.profile;
+      if(!profile || profile === null){
+        return router.replace('/onboarding')
+      }
       router.replace("/(tabs)");
     }
   };

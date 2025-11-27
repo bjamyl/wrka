@@ -1,36 +1,56 @@
-import React, { useState } from "react";
-import { View, Alert, TouchableOpacity, Text } from "react-native";
-import { Button, ButtonText, ButtonSpinner } from "@/components/ui/button";
-import { OtpInput } from "react-native-otp-entry";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { Button, ButtonSpinner, ButtonText } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import React, { useState } from "react";
+import { Alert, Text, TouchableOpacity, View } from "react-native";
+import { OtpInput } from "react-native-otp-entry";
+import { FormError } from "../ui/FormError";
+
 
 const OTPForm = () => {
   const [otp, setOtp] = useState("");
+  // 1. Add error state
+  const [error, setError] = useState(""); 
+  
   const router = useRouter();
   const { email } = useLocalSearchParams<{ email: string }>();
   const { verifyOtp, resendOtp, loading } = useAuth();
 
   const handleVerify = async () => {
+    setError(""); // Clear previous errors
+
     if (otp.length !== 6) {
-      Alert.alert("Error", "Please enter a valid 6-digit code");
+      setError("Please enter a valid 6-digit code");
       return;
     }
 
-    const { data, error } = await verifyOtp(email, otp, "email");
+    const { data, error: apiError } = await verifyOtp(email, otp, "email");
 
-    if (error) {
+    if (apiError) {
+      setError(apiError.message);
       return;
     }
 
     if (data?.session) {
+      // Success case - usually we don't need a UI component for success here as we redirect
       Alert.alert("Success", "Email verified successfully!");
       router.replace("/onboarding");
     }
   };
 
   const handleResend = async () => {
-    await resendOtp(email);
+    setError("");
+    const { error: resendError } = await resendOtp(email);
+    
+    if (resendError) {
+      setError(resendError.message);
+    }
+  };
+
+  // Helper to clear error when typing
+  const handleTextChange = (text: string) => {
+    setOtp(text);
+    if (error) setError("");
   };
 
   return (
@@ -38,8 +58,8 @@ const OTPForm = () => {
       {/* OTP Input */}
       <OtpInput
         numberOfDigits={6}
-        onTextChange={(text) => setOtp(text)}
-        onFilled={(text) => setOtp(text)}
+        onTextChange={handleTextChange}
+        onFilled={(text) => handleTextChange(text)}
         autoFocus={true}
         focusColor="#000000"
         type="numeric"
@@ -53,13 +73,13 @@ const OTPForm = () => {
             height: 56,
             borderRadius: 12,
             borderWidth: 2,
-            borderColor: "#D1D5DB",
+            borderColor: error ? "#DC2626" : "#D1D5DB", // Highlight red on error
           },
           focusedPinCodeContainerStyle: {
-            borderColor: "#000000",
+            borderColor: error ? "#DC2626" : "#000000",
           },
           filledPinCodeContainerStyle: {
-            borderColor: "#000000",
+            borderColor: error ? "#DC2626" : "#000000",
           },
           pinCodeTextStyle: {
             fontSize: 24,
@@ -67,6 +87,9 @@ const OTPForm = () => {
           },
         }}
       />
+
+      {/* 2. Add FormError Component */}
+     {error && <FormError message={error} />}
 
       {/* Verify Button */}
       <Button

@@ -1,9 +1,9 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { Profile, ProfileWithAuth } from '@/types/profile';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Alert } from 'react-native';
 
-const fetchProfile = async (): Promise<ProfileWithAuth> => {
+export const fetchProfile = async (): Promise<ProfileWithAuth> => {
   // Get current user
   const { data: { user }, error: userError } = await supabase.auth.getUser();
 

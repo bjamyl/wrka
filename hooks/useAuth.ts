@@ -1,42 +1,71 @@
-import { supabase } from '@/lib/supabase';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Alert } from 'react-native';
+import { supabase } from "@/lib/supabase";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Alert } from "react-native";
+import { fetchProfile } from "./useProfile";
 
-
-const signUpFn = async ({ email, password }: { email: string; password: string }) => {
+const signUpFn = async ({
+  email,
+  password,
+}: {
+  email: string;
+  password: string;
+}) => {
   const { data, error } = await supabase.auth.signUp({ email, password });
-  console.log('error', error)
-  console.log('sign up success data', data)
+  console.log("error", error);
+  console.log("sign up success data", data);
   if (error) throw error;
 
   if (data.user && data.user.identities && data.user.identities.length === 0) {
-    throw new Error('This email is already registered.');
+    throw new Error("This email is already registered.");
   }
   return data;
 };
 
-const signInFn = async ({ email, password }: { email: string; password: string }) => {
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+const signInFn = async ({
+  email,
+  password,
+}: {
+  email: string;
+  password: string;
+}) => {
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
   if (error) throw error;
-  return data;
+
+  try {
+    const profile = await fetchProfile();
+   
+    return { user: data.user, profile };
+  } catch (profileError: any) {
+    // If profile doesn't exist, return null to indicate incomplete onboarding
+    if (profileError.code === "PGRST116") {
+      console.log("Profile not found - user needs onboarding");
+      return { user: data.user, profile: null };
+    }
+    // For other errors, rethrow
+    throw profileError;
+  }
 };
 
 const verifyOtpFn = async ({
   email,
   token,
-  type = 'email'
+  type = "email",
 }: {
   email: string;
   token: string;
-  type?: 'email' | 'signup'
+  type?: "email" | "signup";
 }) => {
   const { data, error } = await supabase.auth.verifyOtp({ email, token, type });
+  console.log("error ocurred in otp", error);
   if (error) throw error;
   return data;
 };
 
 const resendOtpFn = async (email: string) => {
-  const { error } = await supabase.auth.resend({ type: 'signup', email });
+  const { error } = await supabase.auth.resend({ type: "signup", email });
   if (error) throw error;
 };
 
@@ -46,7 +75,9 @@ const logoutFn = async () => {
 };
 
 const changePasswordFn = async (newPassword: string) => {
-  const { data, error } = await supabase.auth.updateUser({ password: newPassword });
+  const { data, error } = await supabase.auth.updateUser({
+    password: newPassword,
+  });
   if (error) throw error;
   return data;
 };
@@ -57,19 +88,21 @@ export const useAuth = () => {
   const signUpMutation = useMutation({
     mutationFn: signUpFn,
     onError: (error: any) => {
-      console.log('Sign Up Error:', error);
+      console.log("Sign Up Error:", error);
     },
   });
 
   const signInMutation = useMutation({
     mutationFn: signInFn,
-    onSuccess: () => {
+
+    onSuccess: (data) => {
+      console.log("sign in data", data);
       // Invalidate profile and handyman profile queries on successful sign in
-      queryClient.invalidateQueries({ queryKey: ['profile'] });
-      queryClient.invalidateQueries({ queryKey: ['handyman-profile'] });
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+      queryClient.invalidateQueries({ queryKey: ["handyman-profile"] });
     },
     onError: (error: any) => {
-      console.log('sign in error', error)
+      console.log("sign in error", error);
     },
   });
 
@@ -77,39 +110,38 @@ export const useAuth = () => {
     mutationFn: verifyOtpFn,
     onSuccess: () => {
       // Invalidate profile queries on successful verification
-      queryClient.invalidateQueries({ queryKey: ['profile'] });
-      queryClient.invalidateQueries({ queryKey: ['handyman-profile'] });
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+      queryClient.invalidateQueries({ queryKey: ["handyman-profile"] });
     },
     onError: (error: any) => {
-      Alert.alert('Verification Error', error.message);
+      console.log("token verification error");
     },
   });
 
   const resendOtpMutation = useMutation({
     mutationFn: resendOtpFn,
     onSuccess: () => {
-      Alert.alert('Success', 'Verification code resent to your email');
+      Alert.alert("Success", "Verification code resent to your email");
     },
     onError: (error: any) => {
-      Alert.alert('Resend Error', error.message);
+      Alert.alert("Resend Error", error.message);
     },
   });
 
   const logoutMutation = useMutation({
     mutationFn: logoutFn,
     onSuccess: () => {
-      // Clear all queries on logout
       queryClient.clear();
     },
     onError: (error: any) => {
-      Alert.alert('Logout Error', error.message);
+      Alert.alert("Logout Error", error.message);
     },
   });
 
   const changePasswordMutation = useMutation({
     mutationFn: changePasswordFn,
     onError: (error: any) => {
-      Alert.alert('Password Change Error', error.message);
+      Alert.alert("Password Change Error", error.message);
     },
   });
 
@@ -132,7 +164,11 @@ export const useAuth = () => {
     }
   };
 
-  const verifyOtp = async (email: string, token: string, type: 'email' | 'signup' = 'email') => {
+  const verifyOtp = async (
+    email: string,
+    token: string,
+    type: "email" | "signup" = "email",
+  ) => {
     try {
       const data = await verifyOtpMutation.mutateAsync({ email, token, type });
       return { data, error: null };

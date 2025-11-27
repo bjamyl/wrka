@@ -4,13 +4,14 @@ export interface Profile {
   phone_number: string;
   id_type: string;
   id_number: string;
-  role: 'handyman' | 'client';
+  role: "handyman" | "client";
   city: string;
   region: string;
   district: string;
   locality: string;
   country: string;
   created_at?: string;
+  last_activity_at?: string;
   updated_at?: string;
 }
 

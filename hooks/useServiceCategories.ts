@@ -1,6 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { ServiceCategory } from '@/types/service';
+import { useQuery } from '@tanstack/react-query';
 
 const fetchServiceCategories = async (): Promise<ServiceCategory[]> => {
   const { data, error } = await supabase
@@ -22,7 +22,7 @@ export const useServiceCategories = () => {
   } = useQuery({
     queryKey: ['service-categories'],
     queryFn: fetchServiceCategories,
-    staleTime: 1000 * 60 * 30, // 30 minutes - categories don't change often
+    staleTime: 1000 * 60 * 30, 
   });
 
   return {

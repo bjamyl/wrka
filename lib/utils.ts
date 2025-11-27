@@ -1,3 +1,6 @@
+import * as LucideIcons from "lucide-react-native";
+import { Wrench } from "lucide-react-native";
+ 
  export const getTimeAgo = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -30,3 +33,9 @@
 
     return date.toLocaleString("en-US", options);
   };
+
+
+export const getIconComponent = (iconName: string) => {
+  const Icon = (LucideIcons as any)[iconName];
+  return Icon || Wrench; // Fallback to Wrench if icon not found
+};
