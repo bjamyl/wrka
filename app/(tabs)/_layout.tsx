@@ -14,6 +14,7 @@ export default function TabLayout() {
       }}
       tabBar={renderTabBar}
     >
+
       <Tabs.Screen
         name="index"
         options={{
@@ -51,6 +52,8 @@ export default function TabLayout() {
           tabBarLabel: "Profile",
         }}
       />
+
+      
     </Tabs>
   );
 }

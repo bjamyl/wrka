@@ -1,6 +1,6 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { HandymanProfile } from "@/types/profile";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Alert } from "react-native";
 
 const fetchHandymanProfile = async (): Promise<HandymanProfile | null> => {
@@ -192,11 +192,12 @@ export const useHandymanProfile = () => {
     queryKey: ["handyman-profile"],
     queryFn: fetchHandymanProfile,
     retry: 1,
+    
   });
 
   const updateAvailabilityMutation = useMutation({
     mutationFn: updateHandymanAvailability,
-    onSuccess: (data) => {
+    onSuccess: (data:any) => {
       // Update the cache with the new data
       queryClient.setQueryData(["handyman-profile"], data);
     },

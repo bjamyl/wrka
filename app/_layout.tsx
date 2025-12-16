@@ -1,7 +1,8 @@
+import AppSessionGuard from "@/components/guards/AppSessionGuard";
+import { NotificationToast } from "@/components/notifications-toast";
 import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
 import { NotificationProvider } from "@/contexts/NotificationsContext";
 import { ServiceRequestProvider } from "@/contexts/ServiceRequestsContext";
-import { NotificationToast } from "@/components/notifications-toast";
 import "@/global.css";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { queryClient } from "@/lib/queryClient";
@@ -49,6 +50,7 @@ export default function RootLayout() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <AppSessionGuard>
       <NotificationProvider>
         <ServiceRequestProvider>
           <GluestackUIProvider mode="light">
@@ -58,6 +60,13 @@ export default function RootLayout() {
               <Stack screenOptions={{ headerShown: false }}>
                 <Stack.Screen name="(auth)" />
                 <Stack.Screen name="(tabs)" />
+                <Stack.Screen name="conversation" />
+                <Stack.Screen name="edit-profile" />
+                <Stack.Screen name="handyman-profile" />
+                <Stack.Screen name="preferences" />
+                <Stack.Screen name="security" />
+                <Stack.Screen name="job-details" />
+                <Stack.Screen name="onboarding" />
                 <Stack.Screen
                   name="modal"
                   options={{
@@ -74,6 +83,7 @@ export default function RootLayout() {
           </GluestackUIProvider>
         </ServiceRequestProvider>
       </NotificationProvider>
+      </AppSessionGuard>
     </QueryClientProvider>
   );
 }
