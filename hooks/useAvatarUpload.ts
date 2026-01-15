@@ -18,6 +18,7 @@ export const useAvatarUpload = (): UseAvatarUploadReturn => {
 
   const updateAvatarMutation = useMutation({
     mutationFn: async (avatarUrl: string) => {
+      console.log('avatar url for updating', avatarUrl)
       const {
         data: { user },
         error: userError,
@@ -35,6 +36,11 @@ export const useAvatarUpload = (): UseAvatarUploadReturn => {
       if (updateError) {
         throw new Error(`Failed to update avatar: ${updateError.message}`);
       }
+
+      // Also update the user metadata with the avatar URL
+      await supabase.auth.updateUser({
+        data: { avatar_url: avatarUrl },
+      });
 
       return avatarUrl;
     },

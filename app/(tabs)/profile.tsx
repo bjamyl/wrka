@@ -1,34 +1,35 @@
-import React from "react";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { Button, ButtonText } from "@/components/ui/button";
-import {
-  ScrollView,
-  View,
-  ActivityIndicator,
-  TouchableOpacity,
-  RefreshControl,
-} from "react-native";
-import { Image } from "expo-image";
 import { Heading } from "@/components/ui/heading";
 import { Text } from "@/components/ui/text";
-import { useProfile } from "@/hooks/useProfile";
 import { useAvatarUpload } from "@/hooks/useAvatarUpload";
+import { useProfile } from "@/hooks/useProfile";
+import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import {
-  User,
   Briefcase,
-  Settings,
-  HelpCircle,
-  ShieldCheck,
-  ChevronRight,
-  CheckCircle,
-  Wallet,
-  Star,
   Camera,
+  CheckCircle,
+  ChevronRight,
+  HelpCircle,
+  Settings,
+  ShieldCheck,
+  Star,
+  User,
+  Wallet,
 } from "lucide-react-native";
+import React from "react";
+import {
+  ActivityIndicator,
+  RefreshControl,
+  ScrollView,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Profile() {
   const { profile, loading, refetch } = useProfile();
+  console.log('profile details', profile)
   const { pickAndUploadAvatar, isUploading } = useAvatarUpload();
   const router = useRouter();
   const [refreshing, setRefreshing] = React.useState(false);

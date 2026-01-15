@@ -11,6 +11,7 @@ const ACTIVE_STATUSES: ServiceRequestStatus[] = ['on_the_way', 'arrived', 'in_pr
 
 const fetchHandymanJobs = async (
   handymanId: string,
+  userProfileId: string,
   tabStatus?: JobTabStatus
 ): Promise<ServiceRequestWithDetails[]> => {
   let query = supabase
@@ -33,6 +34,7 @@ const fetchHandymanJobs = async (
     `
     )
     .eq('handyman_id', handymanId)
+    .neq('customer_id', userProfileId) // Exclude jobs where handyman is also the customer
     .order('created_at', { ascending: false });
 
   // Filter by tab status if specified
@@ -132,11 +134,27 @@ const createEarningTransaction = async (
   }
 };
 
-// Mark job as completed
+// Create payment request via Edge Function
+const createPaymentRequest = async (serviceRequestId: string, amount: number) => {
+  const { data, error } = await supabase.functions.invoke('create-payment-request', {
+    body: { serviceRequestId, amount },
+  });
+
+  if (error) {
+    console.error('Failed to create payment request:', error);
+    // Don't throw - job is completed, payment request can be retried
+    return null;
+  }
+
+  return data;
+};
+
+// Mark job as completed and create payment request
 const completeJob = async (jobId: string, finalCost?: number) => {
   const updateData: any = {
     status: 'completed',
     completed_at: new Date().toISOString(),
+    payment_status: 'pending', // Set payment as pending
   };
 
   if (finalCost !== undefined) {
@@ -157,19 +175,14 @@ const completeJob = async (jobId: string, finalCost?: number) => {
   if (error) throw error;
   if (!data) throw new Error('Job cannot be completed');
 
-  // Create earning transaction if there's a final cost
+  // Create payment request instead of direct transaction
+  // Transaction will be created by webhook when payment is confirmed
   const jobCost = finalCost ?? data.final_cost ?? data.estimated_cost;
-  if (jobCost && data.handyman_id) {
-    const description = data.category?.name
-      ? `Payment for ${data.category.name} - ${data.title}`
-      : `Payment for ${data.title}`;
-
-    await createEarningTransaction(
-      data.handyman_id,
-      jobId,
-      jobCost,
-      description
-    );
+  if (jobCost) {
+    const paymentResult = await createPaymentRequest(jobId, jobCost);
+    if (paymentResult?.success) {
+      console.log('Payment request created:', paymentResult.paymentRequest?.paystack_reference);
+    }
   }
 
   return data;
@@ -187,12 +200,12 @@ export const useHandymanJobs = (tabStatus?: JobTabStatus) => {
   } = useQuery({
     queryKey: ['handyman-jobs', handymanProfile?.id, tabStatus],
     queryFn: () => {
-      if (!handymanProfile?.id) {
+      if (!handymanProfile?.id || !handymanProfile?.profile_id) {
         throw new Error('Handyman profile not found');
       }
-      return fetchHandymanJobs(handymanProfile.id, tabStatus);
+      return fetchHandymanJobs(handymanProfile.id, handymanProfile.profile_id, tabStatus);
     },
-    enabled: !!handymanProfile?.id,
+    enabled: !!handymanProfile?.id && !!handymanProfile?.profile_id,
     staleTime: 1000 * 30, // 30 seconds
     refetchInterval: 1000 * 60, // Auto-refetch every minute
   });
@@ -248,30 +261,30 @@ export const useHandymanJobCounts = () => {
   const { data: acceptedJobs } = useQuery({
     queryKey: ['handyman-jobs', handymanProfile?.id, 'accepted'],
     queryFn: () => {
-      if (!handymanProfile?.id) return [];
-      return fetchHandymanJobs(handymanProfile.id, 'accepted');
+      if (!handymanProfile?.id || !handymanProfile?.profile_id) return [];
+      return fetchHandymanJobs(handymanProfile.id, handymanProfile.profile_id, 'accepted');
     },
-    enabled: !!handymanProfile?.id,
+    enabled: !!handymanProfile?.id && !!handymanProfile?.profile_id,
     staleTime: 1000 * 30,
   });
 
   const { data: activeJobs } = useQuery({
     queryKey: ['handyman-jobs', handymanProfile?.id, 'active'],
     queryFn: () => {
-      if (!handymanProfile?.id) return [];
-      return fetchHandymanJobs(handymanProfile.id, 'active');
+      if (!handymanProfile?.id || !handymanProfile?.profile_id) return [];
+      return fetchHandymanJobs(handymanProfile.id, handymanProfile.profile_id, 'active');
     },
-    enabled: !!handymanProfile?.id,
+    enabled: !!handymanProfile?.id && !!handymanProfile?.profile_id,
     staleTime: 1000 * 30,
   });
 
   const { data: completedJobs } = useQuery({
     queryKey: ['handyman-jobs', handymanProfile?.id, 'completed'],
     queryFn: () => {
-      if (!handymanProfile?.id) return [];
-      return fetchHandymanJobs(handymanProfile.id, 'completed');
+      if (!handymanProfile?.id || !handymanProfile?.profile_id) return [];
+      return fetchHandymanJobs(handymanProfile.id, handymanProfile.profile_id, 'completed');
     },
-    enabled: !!handymanProfile?.id,
+    enabled: !!handymanProfile?.id && !!handymanProfile?.profile_id,
     staleTime: 1000 * 30,
   });
 

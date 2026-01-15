@@ -1,27 +1,31 @@
 import { Text } from "@/components/ui/text";
 import { useCountry } from "@/contexts/CountryContext";
-import { supabase } from "@/lib/supabase";
-import { Clock, Hourglass,HandCoins } from "lucide-react-native";
+import { useHandymanJobs } from "@/hooks/useHandymanJobs";
+import { Clock, Hourglass, HandCoins } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import { ActivityIndicator, Alert, TouchableOpacity, View } from "react-native";
 
 interface JobInProgressCardProps {
   requestId: string;
   startedAt: string;
+  finalCost?: number | null;
+  estimatedCost?: number | null;
   onJobFinished?: () => void;
 }
 
 export default function JobInProgressCard({
   requestId,
   startedAt,
+  finalCost,
+  estimatedCost,
   onJobFinished,
 }: JobInProgressCardProps) {
   const { config } = useCountry();
+  const { completeJobAsync, isCompleting } = useHandymanJobs();
   const [elapsedTime, setElapsedTime] = useState(0);
-  const [isFinishing, setIsFinishing] = useState(false);
 
-  // Fixed payment amount - will be fetched from backend later
-  const PAYMENT_AMOUNT = 150.0;
+  // Use final cost if available, otherwise estimated cost
+  const paymentAmount = finalCost ?? estimatedCost ?? 0;
 
   useEffect(() => {
     const startTime = new Date(startedAt).getTime();
@@ -50,29 +54,22 @@ export default function JobInProgressCard({
   const handleFinishJob = async () => {
     Alert.alert(
       "Finish Job",
-      "Are you sure you want to mark this job as completed?",
+      `Are you sure you want to mark this job as completed?\n\nA payment request of ${config.currency.symbol}${paymentAmount.toFixed(2)} will be sent to the customer.`,
       [
         {
           text: "Cancel",
           style: "cancel",
         },
         {
-          text: "Finish",
+          text: "Finish & Request Payment",
           style: "default",
           onPress: async () => {
-            setIsFinishing(true);
             try {
-              const { error } = await supabase
-                .from("service_requests")
-                .update({ status: "completed" })
-                .eq("id", requestId)
-                .eq("status", "in_progress");
-
-              if (error) throw error;
+              await completeJobAsync(requestId, paymentAmount);
 
               Alert.alert(
-                "Job Completed",
-                "Great work! The job has been marked as completed.",
+                "Job Completed!",
+                "Great work! A payment request has been sent to the customer. You'll be notified when payment is received.",
                 [
                   {
                     text: "OK",
@@ -86,8 +83,6 @@ export default function JobInProgressCard({
                 "Failed to complete job. Please try again.",
                 [{ text: "OK" }]
               );
-            } finally {
-              setIsFinishing(false);
             }
           },
         },
@@ -133,24 +128,23 @@ export default function JobInProgressCard({
             </Text>
           </View>
           <Text className="text-gray-900 font-dmsans-bold text-4xl text-center">
-            {config.currency.symbol}{PAYMENT_AMOUNT.toFixed(2)}
+            {config.currency.symbol}{paymentAmount.toFixed(2)}
           </Text>
         </View>
 
         {/* Finish Job Button */}
         <TouchableOpacity
           onPress={handleFinishJob}
-          disabled={isFinishing}
+          disabled={isCompleting}
           className={`${
-            isFinishing ? "bg-white/80" : "bg-white"
+            isCompleting ? "bg-white/80" : "bg-white"
           } py-4 rounded-full items-center justify-center border`}
-          
         >
-          {isFinishing ? (
+          {isCompleting ? (
             <ActivityIndicator color="#2563EB" />
           ) : (
             <Text className=" font-dmsans-bold text-lg">
-              Finish Job 
+              Finish Job
             </Text>
           )}
         </TouchableOpacity>

@@ -18,6 +18,8 @@ export type ServiceRequestStatus =
   | "completed"
   | "cancelled";
 
+export type PaymentStatus = 'unpaid' | 'pending' | 'processing' | 'paid' | 'failed';
+
 export type ServiceRequest = {
   id: string;
   customer_id: string;
@@ -41,6 +43,10 @@ export type ServiceRequest = {
   started_at: string;
   completed_at: string;
   updated_at: string;
+  // Payment fields
+  payment_status: PaymentStatus;
+  payment_request_id: string | null;
+  payment_completed_at: string | null;
 };
 
 // Enriched service request with joined data

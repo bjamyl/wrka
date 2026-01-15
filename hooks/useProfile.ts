@@ -24,7 +24,7 @@ export const fetchProfile = async (): Promise<ProfileWithAuth> => {
     ...profileData as Profile,
     email: user.email,
     email_verified: user.email_confirmed_at ? true : false,
-    avatar_url: user.user_metadata?.avatar_url,
+    
   };
 
   return combinedProfile;

@@ -8,6 +8,7 @@ import {
   Calendar,
   CheckCircle,
   Clock,
+  CreditCard,
   Inbox,
   MapPin,
   Phone,
@@ -39,6 +40,8 @@ export default function Jobs() {
 
   // Use tab status directly - the hook now handles the mapping internally
   const { jobs, loading, refetch } = useHandymanJobs(activeTab);
+
+  console.log('jobs ', jobs)
 
   const tabs = [
     { id: "accepted" as const, label: "Accepted", count: acceptedCount },
@@ -192,6 +195,60 @@ export default function Jobs() {
                                 : job.status === "arrived"
                                   ? "Arrived"
                                   : "In Progress"}
+                            </Text>
+                          </View>
+                        )}
+                        {/* Payment status badge for completed jobs */}
+                        {activeTab === "completed" && job.payment_status && (
+                          <View
+                            className={`px-2 py-1 rounded-full flex-row items-center gap-1 ${
+                              job.payment_status === "paid"
+                                ? "bg-green-50"
+                                : job.payment_status === "pending"
+                                  ? "bg-amber-50"
+                                  : job.payment_status === "processing"
+                                    ? "bg-blue-50"
+                                    : job.payment_status === "failed"
+                                      ? "bg-red-50"
+                                      : "bg-gray-50"
+                            }`}
+                          >
+                            <CreditCard
+                              size={12}
+                              color={
+                                job.payment_status === "paid"
+                                  ? "#16A34A"
+                                  : job.payment_status === "pending"
+                                    ? "#D97706"
+                                    : job.payment_status === "processing"
+                                      ? "#2563EB"
+                                      : job.payment_status === "failed"
+                                        ? "#DC2626"
+                                        : "#6B7280"
+                              }
+                            />
+                            <Text
+                              className={`font-semibold text-xs ${
+                                job.payment_status === "paid"
+                                  ? "text-green-600"
+                                  : job.payment_status === "pending"
+                                    ? "text-amber-600"
+                                    : job.payment_status === "processing"
+                                      ? "text-blue-600"
+                                      : job.payment_status === "failed"
+                                        ? "text-red-600"
+                                        : "text-gray-600"
+                              }`}
+                            >
+                              {job.payment_status === "paid"
+                                ? "Paid"
+                                : job.payment_status === "pending"
+                                  ? "Awaiting Payment"
+                                  : job.payment_status === "processing"
+                                    ? "Processing"
+                                    : job.payment_status === "failed"
+                                      ? "Payment Failed"
+                                      : "Unpaid"}
                             </Text>
                           </View>
                         )}
