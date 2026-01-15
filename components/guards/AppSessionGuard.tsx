@@ -1,8 +1,8 @@
 import { supabase } from "@/lib/supabase";
 import type { Session } from "@supabase/supabase-js";
 import { useRouter, useSegments } from "expo-router";
-import { ReactNode, useEffect, useState } from "react";
-import { ActivityIndicator, View } from "react-native";
+import * as SplashScreen from "expo-splash-screen";
+import { ReactNode, useEffect, useRef, useState } from "react";
 
 type Props = { children: ReactNode };
 
@@ -11,6 +11,8 @@ export default function AppSessionGuard({ children }: Props) {
   const segments = useSegments();
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isNavigationReady, setIsNavigationReady] = useState(false);
+  const hasHiddenSplash = useRef(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -33,7 +35,6 @@ export default function AppSessionGuard({ children }: Props) {
 
     const inAuthFlow = segments[0] === "(auth)";
 
-    // Routes that authenticated users can access
     const authenticatedRoutes = [
       "(tabs)",
       "conversation",
@@ -43,6 +44,7 @@ export default function AppSessionGuard({ children }: Props) {
       "security",
       "job-details",
       "onboarding",
+      "payment-methods",
       "modal",
     ];
 
@@ -52,15 +54,23 @@ export default function AppSessionGuard({ children }: Props) {
       router.replace("/(tabs)");
     } else if (!session && !inAuthFlow) {
       router.replace("/welcome");
+    } else {
+      // Already on the correct route
+      setIsNavigationReady(true);
     }
-  }, [session, loading, segments]); 
+  }, [session, loading, segments]);
 
-  if (loading) {
-    return (
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-        <ActivityIndicator size="large" />
-      </View>
-    );
+  // Hide splash screen once navigation is ready
+  useEffect(() => {
+    if (isNavigationReady && !hasHiddenSplash.current) {
+      hasHiddenSplash.current = true;
+      SplashScreen.hideAsync();
+    }
+  }, [isNavigationReady]);
+
+  // Keep showing nothing (splash screen stays visible) until ready
+  if (loading || !isNavigationReady) {
+    return null;
   }
 
   return <>{children}</>;

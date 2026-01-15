@@ -10,6 +10,7 @@ import { HStack } from "@/components/ui/hstack";
 import { Input, InputField } from "@/components/ui/input";
 import { Textarea, TextareaInput } from "@/components/ui/textarea";
 import { VStack } from "@/components/ui/vstack";
+import { useCountry } from "@/contexts/CountryContext";
 import { useServiceCategories } from "@/hooks/useServiceCategories";
 import { getIconComponent } from "@/lib/utils";
 import { yupResolver } from "@hookform/resolvers/yup";
@@ -70,6 +71,7 @@ export default function ProfessionalInfo({
   isSubmitting = false,
   goToPreviousStep,
 }: ProfessionalInfoProps) {
+  const { config } = useCountry();
   const {
     categories,
     error: categoriesError,
@@ -243,7 +245,7 @@ export default function ProfessionalInfo({
             <FormControl isInvalid={!!errors.hourly_rate}>
               <FormControlLabel>
                 <FormControlLabelText className="font-onest-semibold">
-                  Hourly Rate (GHS)
+                  Hourly Rate ({config.currency.code})
                 </FormControlLabelText>
               </FormControlLabel>
               <Input className="my-1 rounded-xl" size="xl">

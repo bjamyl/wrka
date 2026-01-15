@@ -1,4 +1,5 @@
 import BasicInfo from "@/components/onboarding/BasicInfo";
+import CountrySelection from "@/components/onboarding/CountrySelection";
 import ProfessionalInfo from "@/components/onboarding/ProfessionalInfo";
 import VerificationInfo from "@/components/onboarding/VerificationInfo";
 import { Heading } from "@/components/ui/heading";
@@ -9,6 +10,8 @@ import { useRef, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 import PagerView from "react-native-pager-view";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+const TOTAL_STEPS = 4;
 
 export default function Onboarding() {
   const pagerRef = useRef<PagerView>(null);
@@ -22,6 +25,11 @@ export default function Onboarding() {
   } = useOnboarding();
 
   const headings = [
+    {
+      title: "Welcome to Wrka",
+      description:
+        "First, let us know where you're located so we can personalize your experience",
+    },
     {
       title: "Basic Information",
       description:
@@ -41,7 +49,7 @@ export default function Onboarding() {
 
   const goToNextStep = () => {
     setCurrentStep((prev) => {
-      const next = Math.min(prev + 1, 2);
+      const next = Math.min(prev + 1, TOTAL_STEPS - 1);
       pagerRef.current?.setPage(next);
       return next;
     });
@@ -55,7 +63,7 @@ export default function Onboarding() {
     });
   };
 
-  const progressValue = ((currentStep + 1) / 3) * 100;
+  const progressValue = ((currentStep + 1) / TOTAL_STEPS) * 100;
 
   return (
     <SafeAreaView className="flex-1 bg-white">
@@ -86,6 +94,17 @@ export default function Onboarding() {
             // Sync with pager view changes if needed
           }}
         >
+          {/* Step 0: Country Selection */}
+          <View key="0" className="flex-1">
+            <View className="flex-1 pb-10">
+              <CountrySelection
+                onSubmit={goToNextStep}
+                isSubmitting={isSubmitting}
+              />
+            </View>
+          </View>
+
+          {/* Step 1: Basic Info */}
           <View key="1" className="flex-1">
             <ScrollView
               className="flex-1"
@@ -103,6 +122,7 @@ export default function Onboarding() {
             </ScrollView>
           </View>
 
+          {/* Step 2: Professional Info */}
           <View key="2" className="flex-1">
             <ScrollView
               className="flex-1"
@@ -125,6 +145,7 @@ export default function Onboarding() {
             </ScrollView>
           </View>
 
+          {/* Step 3: Verification Info */}
           <View key="3" className="flex-1">
             <ScrollView
               className="flex-1"

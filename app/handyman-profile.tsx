@@ -1,27 +1,48 @@
 import { Button, ButtonText } from "@/components/ui/button";
 import { Heading } from "@/components/ui/heading";
-import { HStack } from "@/components/ui/hstack";
 import { Switch } from "@/components/ui/switch";
 import { Text } from "@/components/ui/text";
-import { VStack } from "@/components/ui/vstack";
+import { useCountry } from "@/contexts/CountryContext";
 import { useHandymanProfile } from "@/hooks/useHandymanProfile";
 import { Certificate } from "@/types/profile";
 import { useRouter } from "expo-router";
-import { ArrowLeft, Award, Briefcase, CheckCircle, Clock, DollarSign, Download, FileText, MapPin, Navigation, Shield, Star, XCircle } from "lucide-react-native";
+import {
+  ArrowLeft,
+  Award,
+  Briefcase,
+  CheckCircle,
+  Clock,
+  Download,
+  FileText,
+  MapPin,
+  Navigation,
+  Shield,
+  Star,
+  XCircle,
+} from "lucide-react-native";
 import React from "react";
-import { ActivityIndicator, Linking, RefreshControl, ScrollView, TouchableOpacity, View } from "react-native";
+import {
+  ActivityIndicator,
+  Linking,
+  RefreshControl,
+  ScrollView,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function HandymanProfile() {
-  const { handymanProfile, loading, updating, refetch, updateAvailability } = useHandymanProfile();
+  const { handymanProfile, loading, updating, refetch, updateAvailability } =
+    useHandymanProfile();
   const router = useRouter();
+  const { config } = useCountry();
   const [refreshing, setRefreshing] = React.useState(false);
 
   const onRefresh = React.useCallback(async () => {
     setRefreshing(true);
     await refetch();
     setRefreshing(false);
-  }, []);
+  }, [refetch]);
 
   const formatFileSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`;
@@ -60,41 +81,13 @@ export default function HandymanProfile() {
     }
   };
 
-  const InfoCard = ({
-    icon: Icon,
-    label,
-    value,
-    valueColor = "text-gray-900"
-  }: {
-    icon: any;
-    label: string;
-    value: string | number;
-    valueColor?: string;
-  }) => (
-    <View className="flex-1 bg-white rounded-2xl border border-gray-200 p-4">
-      <VStack space="sm">
-        <View className="w-10 h-10 rounded-full bg-gray-100 items-center justify-center">
-          <Icon size={20} color="#6B7280" />
-        </View>
-        <VStack space="xs">
-          <Text size="xs" className="text-gray-500 font-dmsans">
-            {label}
-          </Text>
-          <Text size="lg" className={`${valueColor} font-dmsans-bold`}>
-            {value}
-          </Text>
-        </VStack>
-      </VStack>
-    </View>
-  );
-
   if (loading && !refreshing) {
     return (
       <SafeAreaView edges={["top"]} className="flex-1 bg-gray-50">
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color="#000" />
-          <Text size="sm" className="text-gray-600 mt-4 font-dmsans">
-            Loading handyman profile...
+          <Text className="text-gray-500 mt-3 font-dmsans">
+            Loading profile...
           </Text>
         </View>
       </SafeAreaView>
@@ -104,35 +97,38 @@ export default function HandymanProfile() {
   if (!handymanProfile) {
     return (
       <SafeAreaView edges={["top"]} className="flex-1 bg-gray-50">
-        <View className="px-6 py-4 border-b border-gray-200 bg-white">
+        {/* Header */}
+        <View className="px-6 py-4 bg-white mb-4">
           <View className="flex-row items-center">
             <TouchableOpacity
               onPress={() => router.back()}
-              className="mr-4 p-2 -ml-2"
+              className="mr-4 p-1 -ml-1"
             >
               <ArrowLeft size={24} color="#000" />
             </TouchableOpacity>
-            <Heading size="xl" className="text-black font-dmsans-bold">
-              Handyman Profile
-            </Heading>
+            <View>
+              <Heading size="xl" className="text-black font-dmsans-bold">
+                Professional Profile
+              </Heading>
+            </View>
           </View>
         </View>
 
         <View className="flex-1 items-center justify-center px-6">
-          <Shield size={64} color="#9CA3AF" />
-          <Text size="lg" className="text-gray-900 font-dmsans-bold mt-4 text-center">
+          <View className="w-20 h-20 rounded-full bg-gray-100 items-center justify-center mb-4">
+            <Shield size={40} color="#9CA3AF" />
+          </View>
+          <Text className="text-black font-dmsans-bold text-lg mb-2">
             No Handyman Profile
           </Text>
-          <Text size="sm" className="text-gray-600 text-center mt-2 font-dmsans">
-            You haven&apos;t set up your handyman profile yet. Create one to start accepting jobs.
+          <Text className="text-gray-500 text-center font-dmsans mb-6">
+            You haven't set up your handyman profile yet. Create one to start
+            accepting jobs.
           </Text>
           <Button
             size="lg"
-            className="bg-black rounded-full mt-6"
-            onPress={() => {
-              // TODO: Navigate to create handyman profile
-              alert("Create handyman profile coming soon!");
-            }}
+            className="bg-black rounded-full px-8"
+            onPress={() => alert("Create handyman profile coming soon!")}
           >
             <ButtonText className="text-white font-dmsans-bold">
               Create Profile
@@ -153,227 +149,258 @@ export default function HandymanProfile() {
         }
       >
         {/* Header */}
-        <View className="px-6 py-4 border-b border-gray-200 bg-white">
-          <View className="flex-row items-center justify-between mb-2">
-            <HStack space="md" className="items-center flex-1">
+        <View className="px-6 py-4 bg-white mb-4">
+          <View className="flex-row items-center justify-between">
+            <View className="flex-row items-center flex-1">
               <TouchableOpacity
                 onPress={() => router.back()}
-                className="p-2 -ml-2"
+                className="mr-4 p-1 -ml-1"
               >
                 <ArrowLeft size={24} color="#000" />
               </TouchableOpacity>
-              <Heading size="xl" className="text-black font-dmsans-bold">
-                Handyman Profile
-              </Heading>
-            </HStack>
-            <TouchableOpacity className="p-2">
-              <Text size="sm" className="text-black font-dmsans-medium">
+              <View>
+                <Heading size="xl" className="text-black font-dmsans-bold">
+                  Professional Profile
+                </Heading>
+                <Text className="text-gray-500 font-dmsans text-sm">
+                  Manage your work profile
+                </Text>
+              </View>
+            </View>
+            <TouchableOpacity className="px-4 py-2 bg-gray-100 rounded-full">
+              <Text className="text-black font-dmsans-medium text-sm">
                 Edit
               </Text>
             </TouchableOpacity>
           </View>
         </View>
 
-        <View className="px-6 mt-6">
+        <View className="px-6">
           {/* Availability Toggle */}
-          <View className="bg-white rounded-2xl border border-gray-200 p-4 mb-4">
-            <HStack space="md" className="items-center justify-between">
-              <VStack space="xs" className="flex-1">
-                <Text size="md" className="text-gray-900 font-dmsans-bold">
-                  Availability Status
+          <View className="bg-white rounded-2xl p-4 mb-4">
+            <View className="flex-row items-center justify-between">
+              <View className="flex-1 mr-4">
+                <Text className="text-black font-dmsans-medium text-base mb-1">
+                  Available for Work
                 </Text>
-                <Text size="sm" className="text-gray-600 font-dmsans">
+                <Text className="text-gray-500 font-dmsans text-sm">
                   {handymanProfile.is_available
-                    ? "You are currently accepting new jobs"
-                    : "You are not accepting new jobs"}
+                    ? "You're accepting new jobs"
+                    : "You're not accepting jobs"}
                 </Text>
-              </VStack>
+              </View>
               <Switch
                 value={handymanProfile.is_available}
                 onValueChange={updateAvailability}
                 disabled={updating}
               />
-            </HStack>
+            </View>
           </View>
 
-          {/* Verification Status Badges */}
-          <HStack space="md" className="mb-4">
-            <View className={`flex-1 ${handymanProfile.is_verified ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'} border rounded-2xl p-4`}>
-              <HStack space="sm" className="items-center">
+          {/* Status Badges */}
+          <View className="flex-row gap-3 mb-4">
+            <View
+              className={`flex-1 rounded-2xl p-4 ${
+                handymanProfile.is_verified ? "bg-green-50" : "bg-gray-100"
+              }`}
+            >
+              <View className="flex-row items-center">
                 {handymanProfile.is_verified ? (
                   <CheckCircle size={18} color="#10B981" />
                 ) : (
-                  <XCircle size={18} color="#EF4444" />
+                  <XCircle size={18} color="#9CA3AF" />
                 )}
-                <VStack space="xs" className="flex-1">
-                  <Text size="sm" className={`${handymanProfile.is_verified ? 'text-green-700' : 'text-red-700'} font-dmsans-bold`}>
-                    {handymanProfile.is_verified ? 'Verified' : 'Not Verified'}
-                  </Text>
-                  <Text size="xs" className={`${handymanProfile.is_verified ? 'text-green-600' : 'text-red-600'} font-dmsans`}>
-                    {handymanProfile.is_verified ? 'Admin verified' : 'Pending verification'}
-                  </Text>
-                </VStack>
-              </HStack>
+                <Text
+                  className={`ml-2 font-dmsans-medium text-sm ${
+                    handymanProfile.is_verified
+                      ? "text-green-700"
+                      : "text-gray-600"
+                  }`}
+                >
+                  {handymanProfile.is_verified ? "Verified" : "Unverified"}
+                </Text>
+              </View>
             </View>
 
-            <View className={`flex-1 ${handymanProfile.certified ? 'bg-blue-50 border-blue-200' : 'bg-amber-50 border-amber-200'} border rounded-2xl p-4`}>
-              <HStack space="sm" className="items-center">
-                {handymanProfile.certified ? (
-                  <Award size={18} color="#3B82F6" />
-                ) : (
-                  <Award size={18} color="#F59E0B" />
-                )}
-                <VStack space="xs" className="flex-1">
-                  <Text size="sm" className={`${handymanProfile.certified ? 'text-blue-700' : 'text-amber-700'} font-dmsans-bold`}>
-                    {handymanProfile.certified ? 'Certified' : 'Not Certified'}
-                  </Text>
-                  <Text size="xs" className={`${handymanProfile.certified ? 'text-blue-600' : 'text-amber-600'} font-dmsans`}>
-                    {handymanProfile.certified ? 'Has certificates' : 'No certificates'}
-                  </Text>
-                </VStack>
-              </HStack>
+            <View
+              className={`flex-1 rounded-2xl p-4 ${
+                handymanProfile.certified ? "bg-blue-50" : "bg-gray-100"
+              }`}
+            >
+              <View className="flex-row items-center">
+                <Award
+                  size={18}
+                  color={handymanProfile.certified ? "#3B82F6" : "#9CA3AF"}
+                />
+                <Text
+                  className={`ml-2 font-dmsans-medium text-sm ${
+                    handymanProfile.certified
+                      ? "text-blue-700"
+                      : "text-gray-600"
+                  }`}
+                >
+                  {handymanProfile.certified ? "Certified" : "No Certs"}
+                </Text>
+              </View>
             </View>
-          </HStack>
+          </View>
 
           {/* Quick Stats */}
-          <VStack space="md" className="mb-6">
-            <HStack space="md">
-              <InfoCard
-                icon={Star}
-                label="Rating"
-                value={handymanProfile.rating.toFixed(1)}
-                valueColor="text-yellow-600"
-              />
-              <InfoCard
-                icon={DollarSign}
-                label="Hourly Rate"
-                value={`$${handymanProfile.hourly_rate}`}
-                valueColor="text-green-600"
-              />
-            </HStack>
-            <InfoCard
-              icon={Briefcase}
-              label="Total Jobs Completed"
-              value={handymanProfile.total_jobs || 0}
-              valueColor="text-blue-600"
-            />
-          </VStack>
+          <View className="flex-row gap-3 mb-4">
+            <View className="flex-1 bg-white rounded-2xl p-4">
+              <View className="w-10 h-10 rounded-full bg-amber-50 items-center justify-center mb-2">
+                <Star size={18} color="#F59E0B" fill="#F59E0B" />
+              </View>
+              <Text className="text-gray-500 font-dmsans text-xs mb-1">
+                Rating
+              </Text>
+              <Text className="text-black font-dmsans-bold text-lg">
+                {handymanProfile.rating?.toFixed(1) || "0.0"}
+              </Text>
+            </View>
+
+            <View className="flex-1 bg-white rounded-2xl p-4">
+              <View className="w-10 h-10 rounded-full bg-green-50 items-center justify-center mb-2">
+                <Text className="text-green-600 font-dmsans-bold text-sm">
+                  {config.currency.code}
+                </Text>
+              </View>
+              <Text className="text-gray-500 font-dmsans text-xs mb-1">
+                Hourly Rate
+              </Text>
+              <Text className="text-black font-dmsans-bold text-lg">
+                {handymanProfile.hourly_rate || 0}
+              </Text>
+            </View>
+
+            <View className="flex-1 bg-white rounded-2xl p-4">
+              <View className="w-10 h-10 rounded-full bg-blue-50 items-center justify-center mb-2">
+                <Briefcase size={18} color="#3B82F6" />
+              </View>
+              <Text className="text-gray-500 font-dmsans text-xs mb-1">
+                Jobs
+              </Text>
+              <Text className="text-black font-dmsans-bold text-lg">
+                {handymanProfile.total_jobs || 0}
+              </Text>
+            </View>
+          </View>
 
           {/* Bio Section */}
           {handymanProfile.bio && (
-            <View className="bg-white rounded-2xl border border-gray-200 p-4 mb-4">
-              <Text size="md" className="text-gray-900 font-dmsans-bold mb-3">
+            <View className="bg-white rounded-2xl p-4 mb-4">
+              <Text className="text-black font-dmsans-medium text-base mb-2">
                 About
               </Text>
-              <Text size="sm" className="text-gray-700 font-dmsans leading-6">
+              <Text className="text-gray-600 font-dmsans text-sm leading-5">
                 {handymanProfile.bio}
               </Text>
             </View>
           )}
 
-          {/* Professional Info */}
-          <View className="bg-white rounded-2xl border border-gray-200 p-4 mb-4">
-            <Text size="md" className="text-gray-900 font-dmsans-bold mb-4">
-              Professional Information
-            </Text>
+          {/* Professional Details */}
+          <View className="bg-white rounded-2xl px-4 mb-4">
+            {/* Experience */}
+            <View className="flex-row items-center py-4">
+              <View className="w-11 h-11 rounded-full bg-purple-50 items-center justify-center mr-4">
+                <Clock size={20} color="#8B5CF6" />
+              </View>
+              <View className="flex-1">
+                <Text className="text-gray-500 font-dmsans text-xs mb-0.5">
+                  Experience
+                </Text>
+                <Text className="text-black font-dmsans-medium text-base">
+                  {handymanProfile.years_experience}{" "}
+                  {handymanProfile.years_experience === 1 ? "year" : "years"}
+                </Text>
+              </View>
+            </View>
 
-            <VStack space="md">
-              <HStack space="md" className="items-center">
-                <View className="w-10 h-10 rounded-full bg-gray-100 items-center justify-center">
-                  <Clock size={20} color="#6B7280" />
-                </View>
-                <VStack space="xs" className="flex-1">
-                  <Text size="xs" className="text-gray-500 font-dmsans">
-                    Experience
-                  </Text>
-                  <Text size="sm" className="text-gray-900 font-dmsans-medium">
-                    {handymanProfile.years_experience} {handymanProfile.years_experience === 1 ? 'year' : 'years'}
-                  </Text>
-                </VStack>
-              </HStack>
+            <View className="h-px bg-gray-100" />
 
-              <HStack space="md" className="items-center">
-                <View className="w-10 h-10 rounded-full bg-gray-100 items-center justify-center">
-                  <MapPin size={20} color="#6B7280" />
-                </View>
-                <VStack space="xs" className="flex-1">
-                  <Text size="xs" className="text-gray-500 font-dmsans">
-                    Service Radius
-                  </Text>
-                  <Text size="sm" className="text-gray-900 font-dmsans-medium">
-                    {handymanProfile.service_radius} km
-                  </Text>
-                </VStack>
-              </HStack>
+            {/* Service Radius */}
+            <View className="flex-row items-center py-4">
+              <View className="w-11 h-11 rounded-full bg-orange-50 items-center justify-center mr-4">
+                <MapPin size={20} color="#F97316" />
+              </View>
+              <View className="flex-1">
+                <Text className="text-gray-500 font-dmsans text-xs mb-0.5">
+                  Service Radius
+                </Text>
+                <Text className="text-black font-dmsans-medium text-base">
+                  {handymanProfile.service_radius} km
+                </Text>
+              </View>
+            </View>
 
-              {handymanProfile.location_lat && handymanProfile.location_lng && (
-                <TouchableOpacity onPress={handleOpenLocation} activeOpacity={0.7}>
-                  <HStack space="md" className="items-center">
-                    <View className="w-10 h-10 rounded-full bg-blue-100 items-center justify-center">
-                      <Navigation size={20} color="#3B82F6" />
-                    </View>
-                    <VStack space="xs" className="flex-1">
-                      <Text size="xs" className="text-gray-500 font-dmsans">
-                        Current Location
-                      </Text>
-                      <Text size="sm" className="text-blue-600 font-dmsans-medium">
-                        {handymanProfile.location_lat.toFixed(6)}, {handymanProfile.location_lng.toFixed(6)}
-                      </Text>
-                      <Text size="xs" className="text-gray-400 font-dmsans">
-                        Tap to view on map
-                      </Text>
-                    </VStack>
-                  </HStack>
+            {/* Location */}
+            {handymanProfile.location_lat && handymanProfile.location_lng && (
+              <>
+                <View className="h-px bg-gray-100" />
+                <TouchableOpacity
+                  onPress={handleOpenLocation}
+                  activeOpacity={0.6}
+                  className="flex-row items-center py-4"
+                >
+                  <View className="w-11 h-11 rounded-full bg-blue-50 items-center justify-center mr-4">
+                    <Navigation size={20} color="#3B82F6" />
+                  </View>
+                  <View className="flex-1">
+                    <Text className="text-gray-500 font-dmsans text-xs mb-0.5">
+                      Current Location
+                    </Text>
+                    <Text className="text-blue-600 font-dmsans-medium text-base">
+                      View on map
+                    </Text>
+                  </View>
                 </TouchableOpacity>
-              )}
-            </VStack>
+              </>
+            )}
           </View>
 
           {/* Certificates */}
-          {handymanProfile.certificates && handymanProfile.certificates.length > 0 && (
-            <View className="bg-white rounded-2xl border border-gray-200 p-4 mb-4">
-              <HStack space="sm" className="items-center mb-3">
-                <Award size={20} color="#000" />
-                <Text size="md" className="text-gray-900 font-dmsans-bold">
-                  Certificates ({handymanProfile.certificates.length})
-                </Text>
-              </HStack>
+          {handymanProfile.certificates &&
+            handymanProfile.certificates.length > 0 && (
+              <View className="bg-white rounded-2xl p-4 mb-4">
+                <View className="flex-row items-center mb-4">
+                  <Award size={20} color="#000" />
+                  <Text className="text-black font-dmsans-medium text-base ml-2">
+                    Certificates
+                  </Text>
+                  <View className="ml-2 px-2 py-0.5 bg-gray-100 rounded-full">
+                    <Text className="text-gray-600 font-dmsans-medium text-xs">
+                      {handymanProfile.certificates.length}
+                    </Text>
+                  </View>
+                </View>
 
-              <VStack space="sm">
-                {handymanProfile.certificates.map((cert: Certificate, index: number) => (
-                  <TouchableOpacity
-                    key={index}
-                    onPress={() => handleOpenCertificate(cert.url)}
-                    className="p-3 border border-gray-200 rounded-xl bg-gray-50"
-                    activeOpacity={0.7}
-                  >
-                    <HStack space="md" className="items-center">
-                      <View className="w-10 h-10 rounded-lg bg-blue-100 items-center justify-center">
-                        <FileText size={20} color="#3B82F6" />
-                      </View>
-                      <VStack space="xs" className="flex-1">
-                        <Text size="sm" className="text-gray-900 font-dmsans-medium">
-                          {cert.name}
-                        </Text>
-                        <HStack space="sm">
-                          <Text size="xs" className="text-gray-500 font-dmsans">
-                            {formatFileSize(cert.size)}
+                <View className="gap-2">
+                  {handymanProfile.certificates.map(
+                    (cert: Certificate, index: number) => (
+                      <TouchableOpacity
+                        key={index}
+                        onPress={() => handleOpenCertificate(cert.url)}
+                        className="flex-row items-center p-3 bg-gray-50 rounded-xl"
+                        activeOpacity={0.6}
+                      >
+                        <View className="w-10 h-10 rounded-lg bg-blue-100 items-center justify-center mr-3">
+                          <FileText size={18} color="#3B82F6" />
+                        </View>
+                        <View className="flex-1">
+                          <Text className="text-black font-dmsans-medium text-sm mb-0.5">
+                            {cert.name}
                           </Text>
-                          <Text size="xs" className="text-gray-400 font-dmsans">
-                            •
+                          <Text className="text-gray-400 font-dmsans text-xs">
+                            {formatFileSize(cert.size)} • {cert.file_type}
                           </Text>
-                          <Text size="xs" className="text-gray-500 font-dmsans">
-                            {cert.file_type}
-                          </Text>
-                        </HStack>
-                      </VStack>
-                      <Download size={18} color="#6B7280" />
-                    </HStack>
-                  </TouchableOpacity>
-                ))}
-              </VStack>
-            </View>
-          )}
+                        </View>
+                        <Download size={18} color="#9CA3AF" />
+                      </TouchableOpacity>
+                    )
+                  )}
+                </View>
+              </View>
+            )}
         </View>
       </ScrollView>
     </SafeAreaView>

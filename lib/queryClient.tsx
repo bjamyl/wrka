@@ -1,13 +1,17 @@
 
 import { MutationCache, QueryCache, QueryClient } from '@tanstack/react-query';
 import { AppState, Platform } from 'react-native';
+import { supabase } from './supabase';
 
 // optionally detect when app returns to foreground
 function setupAppStateListener(queryClient: QueryClient) {
-  const subscription = AppState.addEventListener('change', (state) => {
+  const subscription = AppState.addEventListener('change', async (state) => {
     if (state === 'active') {
-      // on app coming back to active state, you may want to refetch
-      queryClient.invalidateQueries();
+      // Only invalidate queries if user is authenticated
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        queryClient.invalidateQueries();
+      }
     }
   });
   return () => {

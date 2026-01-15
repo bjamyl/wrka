@@ -25,8 +25,8 @@ export const Tabs: React.FC<TabsProps> = ({
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{display:"flex", flexDirection:"row", justifyContent:"space-between", width:"100%" }}
-        className="mb-6 flex flex-row"
+        contentContainerStyle={{ gap: 8 }}
+        className="mb-6"
       >
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;

@@ -1,50 +1,32 @@
-# Welcome to your Expo app 👋
+# 
+How to Pay Handymen via MoMo
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+ Currently your setup creates withdrawal records with status: 'pending'. Here are the options for actually disbursing funds:
 
-## Get started
+ Option 1: Manual Processing (Simple, good for starting out)
 
-1. Install dependencies
+ 1. Admin views pending withdrawals in a dashboard (or directly in Supabase)
+ 2. Admin manually sends money via MTN MoMo, Vodafone Cash, or AirtelTigo Money
+ 3. Admin updates the withdrawal record: status: 'completed', processed_at: now()
+ 4. Optionally deduct from handyman_balances.available_balance via a database trigger or manually
 
-   ```bash
-   npm install
-   ```
+ Option 2: Integrate a Payment API (Automated)
 
-2. Start the app
+ Ghana has several payment providers that offer disbursement APIs:
 
-   ```bash
-   npx expo start
-   ```
+ | Provider     | API                                  | Notes                                       |
+ |--------------|--------------------------------------|---------------------------------------------|
+ | Paystack     | https://paystack.com/docs/transfers/ | Popular, supports MTN, Vodafone, AirtelTigo |
+ | Hubtel       | https://developers.hubtel.com/       | Ghana-focused                               |
+ | Zeepay       | Disbursement API                     | Good for bulk payouts                       |
+ | MTN MoMo API | https://momodeveloper.mtn.com/       | Direct, but MTN only                        |
 
-In the output, you'll find options to open the app in a
+ Typical flow with Paystack:
+ 1. Handyman requests withdrawal → creates pending record
+ 2. Backend calls Paystack Transfer API with momo_number + momo_provider
+ 3. Paystack webhook confirms success/failure
+ 4. Update withdrawal status + deduct balance
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+ Recommendation
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
-```
-
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+ Start with Option 1 (manual) to validate the business, then integrate Paystack when volume justifies it. Paystack is well-documented and handles all three MoMo providers in Ghana.

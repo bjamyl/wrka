@@ -1,6 +1,7 @@
 import { Button, ButtonIcon, ButtonText } from "@/components/ui/button";
 import { ChevronDownIcon } from "@/components/ui/icon";
 import { Menu, MenuItem, MenuItemLabel } from "@/components/ui/menu";
+import { useCountry } from "@/contexts/CountryContext";
 import React, { useState } from "react";
 import { Text, View } from "react-native";
 
@@ -15,6 +16,7 @@ export default function EarningsCard({
   title,
   statsValue,
 }: EarningsCardProps) {
+  const { config } = useCountry();
   const [selectedTime, setSelectedTime] = useState("All time");
 
   const handleSelect = (value: string, label: string) => {
@@ -34,7 +36,7 @@ export default function EarningsCard({
           <View className="mt-3">
             <View>
               <Text className="font-dmsans-bold text-3xl text-gray-700">
-                GHS {statsValue}
+                {config.currency.code} {statsValue}
               </Text>
             </View>
           </View>

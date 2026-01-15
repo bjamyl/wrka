@@ -6,8 +6,7 @@ import {
 } from "@gorhom/bottom-sheet";
 import { X } from "lucide-react-native";
 import React, { forwardRef, useCallback, useMemo } from "react";
-import { StyleSheet, Text, View } from "react-native";
-import { Pressable } from "react-native-gesture-handler";
+import { StyleSheet, Text, View, Pressable } from "react-native";
 
 interface CustomBottomSheetProps extends BottomSheetModalProps {
   title?: string;

@@ -1,18 +1,41 @@
 import { Grid, GridItem } from "@/components/ui/grid";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { BadgeCent, TrendingUp, UserStar ,BriefcaseBusiness} from "lucide-react-native";
 import React from "react";
 import { View } from "react-native";
 import DashboardCard from "./DashboardCard";
 import EarningsCard from "./EarningsCard";
 
-type DashboardStats ={
-    earnings:number;
-    active:number;
-    rating:number;
-    completedJobs:number;
+type DashboardStats = {
+    earnings: number;
+    active: number;
+    rating: number;
+    completedJobs: number;
+    loading?: boolean;
 }
 
-export default function DashboardLayout({earnings, active, rating, completedJobs}: DashboardStats) {
+export default function DashboardLayout({earnings, active, rating, completedJobs, loading}: DashboardStats) {
+  if (loading) {
+    return (
+      <View className="">
+        <Grid className="gap-4" _extra={{ className: "grid-cols-12" }}>
+          <GridItem _extra={{ className: "col-span-12" }}>
+            <Skeleton width="100%" height={80} style={{ borderRadius: 12 }} />
+          </GridItem>
+          <GridItem _extra={{ className: "col-span-5" }}>
+            <Skeleton width="100%" height={80} style={{ borderRadius: 12 }} />
+          </GridItem>
+          <GridItem _extra={{ className: "col-span-3" }}>
+            <Skeleton width="100%" height={80} style={{ borderRadius: 12 }} />
+          </GridItem>
+          <GridItem _extra={{ className: "col-span-4" }}>
+            <Skeleton width="100%" height={80} style={{ borderRadius: 12 }} />
+          </GridItem>
+        </Grid>
+      </View>
+    );
+  }
+
   return (
     <View className="">
       <Grid className="gap-4" _extra={{ className: "grid-cols-12" }}>

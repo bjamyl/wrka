@@ -2,6 +2,7 @@ import { useHandymanJobs } from "@/hooks/useHandymanJobs";
 import { useStartJobStore } from "@/lib/state/jobs";
 import { useRouter } from "expo-router";
 import { Heading } from "@/components/ui/heading";
+import { useCountry } from "@/contexts/CountryContext";
 import { useState } from "react";
 import { ActivityIndicator, Alert, Text, TouchableOpacity, View } from "react-native";
 import { Actionsheet, ActionsheetBackdrop, ActionsheetContent, ActionsheetDragIndicator, ActionsheetDragIndicatorWrapper } from "../ui/actionsheet";
@@ -10,6 +11,7 @@ import { PlayCircle } from "lucide-react-native";
 
 export default function StartJobSheet({requestId}:{requestId:string}){
   const {setShowStartJob, showStartJob, setIsStarting} = useStartJobStore()
+  const { config } = useCountry();
 
   const router = useRouter()
 
@@ -86,7 +88,7 @@ export default function StartJobSheet({requestId}:{requestId:string}){
               </Text>
               <View className="relative">
                 <View className="absolute left-6 top-0 bottom-0 justify-center z-10">
-                  <Text className="text-gray-500 font-dmsans-bold text-2xl">GH₵</Text>
+                  <Text className="text-gray-500 font-dmsans-bold text-2xl">{config.currency.symbol}</Text>
                 </View>
                 <Input className="bg-gray-50 border border-gray-200 rounded-2xl h-16">
                   <InputField

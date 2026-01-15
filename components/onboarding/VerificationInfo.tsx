@@ -10,6 +10,7 @@ import { HStack } from "@/components/ui/hstack";
 import { Input, InputField } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { VStack } from "@/components/ui/vstack";
+import { useCountry } from "@/contexts/CountryContext";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as DocumentPicker from "expo-document-picker";
 import { useState } from "react";
@@ -22,14 +23,6 @@ import {
   View,
 } from "react-native";
 import * as yup from "yup";
-
-const ID_TYPES = [
-  { label: "Ghana Card (National ID)", value: "ghana_card" },
-  { label: "Voter's ID", value: "voters_id" },
-  { label: "Passport", value: "passport" },
-  { label: "Driver's License", value: "drivers_license" },
-  { label: "SSNIT Card", value: "ssnit_card" },
-];
 
 const schema = yup.object().shape({
   id_type: yup.string().required("ID type is required"),
@@ -52,6 +45,9 @@ export default function VerificationInfo({
   isSubmitting = false,
   goToPreviousStep
 }: VerificationInfoProps) {
+  const { config } = useCountry();
+  const idTypes = config.idTypes;
+
   const [showIdDropdown, setShowIdDropdown] = useState(false);
   const [addCertificates, setAddCertificates] = useState(false);
   const [certificates, setCertificates] = useState<any[]>([]);
@@ -72,7 +68,7 @@ export default function VerificationInfo({
 
   const selectedIdType = watch("id_type");
   const selectedIdLabel =
-    ID_TYPES.find((type) => type.value === selectedIdType)?.label ||
+    idTypes.find((type) => type.value === selectedIdType)?.label ||
     "Select ID type";
 
   const handlePickDocument = async () => {
@@ -151,7 +147,7 @@ export default function VerificationInfo({
 
             {showIdDropdown && !isSubmitting && (
               <View className="border border-gray-200 rounded-xl mt-1 bg-white overflow-hidden">
-                {ID_TYPES.map((type) => (
+                {idTypes.map((type) => (
                   <TouchableOpacity
                     key={type.value}
                     onPress={() => {

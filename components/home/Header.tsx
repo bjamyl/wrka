@@ -8,7 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "expo-router";
 import { LogOut } from "lucide-react-native";
 import React from "react";
-import { Pressable, Text, View } from "react-native";
+import { Alert, Pressable, Text, View } from "react-native";
 
 type HeaderProps = {
   firstName: string;
@@ -24,6 +24,24 @@ export default function Header({
   const router = useRouter();
   const { logout } = useAuth();
 
+  const handleLogoutPress = () => {
+    Alert.alert(
+      "Log Out",
+      "Are you sure you want to log out?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Log Out",
+          style: "destructive",
+          onPress: onLogout,
+        },
+      ]
+    );
+  };
+
   const onLogout = async () => {
     const result = await logout();
 
@@ -36,13 +54,13 @@ export default function Header({
       <View className="flex flex-row gap-2">
         <Avatar size="sm">
           <AvatarFallbackText>{firstName}</AvatarFallbackText>
-          <AvatarImage
-            source={{
-              uri:
-                avatarUrl ||
-                "https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=687&q=80",
-            }}
-          />
+          {avatarUrl && (
+            <AvatarImage
+              source={{
+                uri: avatarUrl,
+              }}
+            />
+          )}
           {isAvailable && <AvatarBadge />}
         </Avatar>
         <View>
@@ -54,7 +72,7 @@ export default function Header({
           </Text>
         </View>
       </View>
-      <Pressable onPress={onLogout}>
+      <Pressable onPress={handleLogoutPress}>
         <LogOut size={24} color="#000" />
       </Pressable>
     </View>

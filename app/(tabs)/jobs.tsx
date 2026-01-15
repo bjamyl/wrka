@@ -37,13 +37,8 @@ export default function Jobs() {
   >("accepted");
   const { acceptedCount, activeCount, completedCount } = useHandymanJobCounts();
 
-  const statusMap = {
-    accepted: "accepted" as const,
-    active: "in_progress" as const,
-    completed: "completed" as const,
-  };
-
-  const { jobs, loading, refetch } = useHandymanJobs(statusMap[activeTab]);
+  // Use tab status directly - the hook now handles the mapping internally
+  const { jobs, loading, refetch } = useHandymanJobs(activeTab);
 
   const tabs = [
     { id: "accepted" as const, label: "Accepted", count: acceptedCount },
@@ -171,13 +166,43 @@ export default function Jobs() {
                           </View>
                         </View>
                       </View>
-                      {isUrgent && (
-                        <View className="bg-red-50 px-2 py-1 rounded-full">
-                          <Text className="text-red-600 font-semibold">
-                            Urgent
-                          </Text>
-                        </View>
-                      )}
+                      <View className="flex-row items-center gap-2">
+                        {/* Status badge for active jobs */}
+                        {activeTab === "active" && (
+                          <View
+                            className={`px-2 py-1 rounded-full ${
+                              job.status === "on_the_way"
+                                ? "bg-blue-50"
+                                : job.status === "arrived"
+                                  ? "bg-purple-50"
+                                  : "bg-green-50"
+                            }`}
+                          >
+                            <Text
+                              className={`font-semibold text-xs ${
+                                job.status === "on_the_way"
+                                  ? "text-blue-600"
+                                  : job.status === "arrived"
+                                    ? "text-purple-600"
+                                    : "text-green-600"
+                              }`}
+                            >
+                              {job.status === "on_the_way"
+                                ? "On The Way"
+                                : job.status === "arrived"
+                                  ? "Arrived"
+                                  : "In Progress"}
+                            </Text>
+                          </View>
+                        )}
+                        {isUrgent && (
+                          <View className="bg-red-50 px-2 py-1 rounded-full">
+                            <Text className="text-red-600 font-semibold text-xs">
+                              Urgent
+                            </Text>
+                          </View>
+                        )}
+                      </View>
                     </View>
 
                     {/* Customer Info */}
@@ -223,12 +248,13 @@ export default function Jobs() {
                               `Accepted ${getTimeAgo(
                                 job.accepted_at || job.created_at
                               )}`}
-                            {activeTab === "active" &&
-                              `Started ${getTimeAgo(
-                                job.started_at ||
-                                  job.accepted_at ||
-                                  job.created_at
-                              )}`}
+                            {activeTab === "active" && (
+                              job.status === "on_the_way"
+                                ? `Departed ${getTimeAgo(job.departed_at || job.accepted_at || job.created_at)}`
+                                : job.status === "arrived"
+                                  ? `Arrived ${getTimeAgo(job.accepted_at || job.created_at)}`
+                                  : `Started ${getTimeAgo(job.started_at || job.accepted_at || job.created_at)}`
+                            )}
                             {activeTab === "completed" &&
                               `Completed ${getTimeAgo(
                                 job.completed_at || job.created_at

@@ -1,13 +1,17 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
-import { ServiceRequestWithDetails } from '@/types/service';
+import { ServiceRequestStatus, ServiceRequestWithDetails } from '@/types/service';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useHandymanProfile } from './useHandymanProfile';
 
-type JobStatus = 'accepted' | 'in_progress' | 'completed' | 'cancelled';
+// Tab-based status groups for the jobs page
+export type JobTabStatus = 'accepted' | 'active' | 'completed';
+
+// Active tab includes all "in-transit" and "working" statuses
+const ACTIVE_STATUSES: ServiceRequestStatus[] = ['on_the_way', 'arrived', 'in_progress'];
 
 const fetchHandymanJobs = async (
   handymanId: string,
-  status?: JobStatus
+  tabStatus?: JobTabStatus
 ): Promise<ServiceRequestWithDetails[]> => {
   let query = supabase
     .from('service_requests')
@@ -31,9 +35,13 @@ const fetchHandymanJobs = async (
     .eq('handyman_id', handymanId)
     .order('created_at', { ascending: false });
 
-  // Filter by status if specified
-  if (status) {
-    query = query.eq('status', status);
+  // Filter by tab status if specified
+  if (tabStatus === 'accepted') {
+    query = query.eq('status', 'accepted');
+  } else if (tabStatus === 'active') {
+    query = query.in('status', ACTIVE_STATUSES);
+  } else if (tabStatus === 'completed') {
+    query = query.eq('status', 'completed');
   }
 
   const { data, error } = await query;
@@ -74,14 +82,54 @@ const startJob = async (jobId: string, finalFee?: number) => {
     .from('service_requests')
     .update(updateData)
     .eq('id', jobId)
-    .eq('status', 'accepted') // Only start if accepted
+ .in('status', ['accepted', 'arrived'])
     .select()
     .single();
 
   if (error) throw error;
+  console.log('supabase error', error)
   if (!data) throw new Error('Job cannot be started');
 
   return data;
+};
+
+// Get platform fee percentage from settings
+const getPlatformFeePercentage = async (): Promise<number> => {
+  const { data } = await supabase
+    .from('platform_settings')
+    .select('value')
+    .eq('key', 'platform_fee_percentage')
+    .single();
+
+  return data?.value?.value || 15; // Default 15%
+};
+
+// Create earning transaction
+const createEarningTransaction = async (
+  handymanId: string,
+  serviceRequestId: string,
+  amount: number,
+  description: string
+) => {
+  const feePercentage = await getPlatformFeePercentage();
+  const platformFee = amount * (feePercentage / 100);
+  const netAmount = amount - platformFee;
+
+  const { error } = await supabase.from('transactions').insert({
+    handyman_id: handymanId,
+    service_request_id: serviceRequestId,
+    type: 'earning',
+    amount: amount,
+    platform_fee: platformFee,
+    net_amount: netAmount,
+    status: 'completed',
+    description: description,
+  });
+
+  if (error) {
+    console.error('Failed to create transaction:', error);
+    // Don't throw - job is already completed, transaction failure shouldn't break flow
+  }
 };
 
 // Mark job as completed
@@ -100,16 +148,34 @@ const completeJob = async (jobId: string, finalCost?: number) => {
     .update(updateData)
     .eq('id', jobId)
     .eq('status', 'in_progress') // Only complete if in progress
-    .select()
+    .select(`
+      *,
+      category:service_categories!category_id(name)
+    `)
     .single();
 
   if (error) throw error;
   if (!data) throw new Error('Job cannot be completed');
 
+  // Create earning transaction if there's a final cost
+  const jobCost = finalCost ?? data.final_cost ?? data.estimated_cost;
+  if (jobCost && data.handyman_id) {
+    const description = data.category?.name
+      ? `Payment for ${data.category.name} - ${data.title}`
+      : `Payment for ${data.title}`;
+
+    await createEarningTransaction(
+      data.handyman_id,
+      jobId,
+      jobCost,
+      description
+    );
+  }
+
   return data;
 };
 
-export const useHandymanJobs = (status?: JobStatus) => {
+export const useHandymanJobs = (tabStatus?: JobTabStatus) => {
   const queryClient = useQueryClient();
   const { handymanProfile } = useHandymanProfile();
 
@@ -119,12 +185,12 @@ export const useHandymanJobs = (status?: JobStatus) => {
     error: queryError,
     refetch,
   } = useQuery({
-    queryKey: ['handyman-jobs', handymanProfile?.id, status],
+    queryKey: ['handyman-jobs', handymanProfile?.id, tabStatus],
     queryFn: () => {
       if (!handymanProfile?.id) {
         throw new Error('Handyman profile not found');
       }
-      return fetchHandymanJobs(handymanProfile.id, status);
+      return fetchHandymanJobs(handymanProfile.id, tabStatus);
     },
     enabled: !!handymanProfile?.id,
     staleTime: 1000 * 30, // 30 seconds
@@ -150,6 +216,8 @@ export const useHandymanJobs = (status?: JobStatus) => {
       // Invalidate queries to refresh the lists
       queryClient.invalidateQueries({ queryKey: ['handyman-jobs'] });
       queryClient.invalidateQueries({ queryKey: ['service-request'] });
+      // Refresh earnings data since a transaction was created
+      queryClient.invalidateQueries({ queryKey: ['earnings'] });
     },
   });
 
@@ -173,7 +241,7 @@ export const useHandymanJobs = (status?: JobStatus) => {
   };
 };
 
-// Hook to get job counts for all statuses
+// Hook to get job counts for all tab statuses
 export const useHandymanJobCounts = () => {
   const { handymanProfile } = useHandymanProfile();
 
@@ -188,10 +256,10 @@ export const useHandymanJobCounts = () => {
   });
 
   const { data: activeJobs } = useQuery({
-    queryKey: ['handyman-jobs', handymanProfile?.id, 'in_progress'],
+    queryKey: ['handyman-jobs', handymanProfile?.id, 'active'],
     queryFn: () => {
       if (!handymanProfile?.id) return [];
-      return fetchHandymanJobs(handymanProfile.id, 'in_progress');
+      return fetchHandymanJobs(handymanProfile.id, 'active');
     },
     enabled: !!handymanProfile?.id,
     staleTime: 1000 * 30,

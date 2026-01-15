@@ -1,4 +1,5 @@
 import { Text } from "@/components/ui/text";
+import { useCountry } from "@/contexts/CountryContext";
 import { supabase } from "@/lib/supabase";
 import { Clock, Hourglass,HandCoins } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
@@ -15,6 +16,7 @@ export default function JobInProgressCard({
   startedAt,
   onJobFinished,
 }: JobInProgressCardProps) {
+  const { config } = useCountry();
   const [elapsedTime, setElapsedTime] = useState(0);
   const [isFinishing, setIsFinishing] = useState(false);
 
@@ -131,7 +133,7 @@ export default function JobInProgressCard({
             </Text>
           </View>
           <Text className="text-gray-900 font-dmsans-bold text-4xl text-center">
-            GH₵{PAYMENT_AMOUNT.toFixed(2)}
+            {config.currency.symbol}{PAYMENT_AMOUNT.toFixed(2)}
           </Text>
         </View>
 

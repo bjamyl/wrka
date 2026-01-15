@@ -11,6 +11,7 @@ import { Text } from "@/components/ui/text";
 import { useProfile } from "@/hooks/useProfile";
 import { useServiceCategories } from "@/hooks/useServiceCategories";
 import { useServiceRequests } from "@/hooks/useServiceRequests";
+import { useStats } from "@/hooks/useStats";
 import { formatScheduledTime, getTimeAgo } from "@/lib/transformers";
 import { getIconComponent } from "@/lib/utils";
 import { useRouter } from "expo-router";
@@ -27,18 +28,11 @@ import React, { useState } from "react";
 import { ScrollView, Switch, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-// Dummy stats - TODO: Fetch real stats from API
-const HANDYMAN_STATS = {
-  todayEarnings: 245.5,
-  activeJobs: 2,
-  rating: 4.8,
-  completedJobs: 127,
-};
-
 export default function Home() {
   const router = useRouter();
   const { profile, loading: profileLoading } = useProfile();
   const { categories, loading: categoriesLoading } = useServiceCategories();
+  const { stats, loading: statsLoading } = useStats();
   const [isAvailable, setIsAvailable] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string | undefined>(
     undefined,
@@ -88,7 +82,11 @@ export default function Home() {
                   <Skeleton width={150} height={16} />
                 </View>
               ) : (
-                <Header firstName={firstName} isAvailable={isAvailable} />
+                <Header
+                  firstName={firstName}
+                  avatarUrl={profile?.avatar_url}
+                  isAvailable={isAvailable}
+                />
               )}
             </View>
             <View className="flex-row items-center justify-between">
@@ -103,10 +101,11 @@ export default function Home() {
           </View>
           {/* Quick Stats */}
           <DashboardLayout
-            earnings={HANDYMAN_STATS.todayEarnings}
-            active={HANDYMAN_STATS.activeJobs}
-            rating={HANDYMAN_STATS.rating}
-            completedJobs={HANDYMAN_STATS.completedJobs}
+            earnings={0}
+            active={stats.activeJobs}
+            rating={stats.rating ?? 0}
+            completedJobs={stats.completedJobs}
+            loading={statsLoading}
           />
         </View>
 

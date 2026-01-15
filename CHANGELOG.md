@@ -84,3 +84,9 @@ This file tracks completed tasks, bug fixes, and feature implementations for the
 - [ ] Push notifications for new messages
 
 ---
+
+
+# Earnings Module
+- Viewing account balance
+- Initiating withdrawals
+- How are we going to handle withdrawal initiated? How do we send money to our users

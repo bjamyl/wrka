@@ -8,6 +8,16 @@ export interface ServiceCategory {
   updated_at?: string;
 }
 
+export type ServiceRequestStatus =
+  | "pending"
+  | "accepted"
+  | "on_the_way"
+  | "arrived"
+  | "in_progress"
+  | "rejected"
+  | "completed"
+  | "cancelled";
+
 export type ServiceRequest = {
   id: string;
   customer_id: string;
@@ -16,18 +26,20 @@ export type ServiceRequest = {
   title: string;
   description: string;
   service_type: string;
+  photos: any[] | null
   location_address: string;
   location_lat: number;
   location_lng: number;
-  status: "pending" | "accepted" | "in_progress" | "rejected" | "completed" | "cancelled";
+  status: ServiceRequestStatus;
   scheduled_time: string;
   final_cost: number | null;
   accepted_at: string | null;
+  departed_at: string | null;
   estimated_cost: number | null;
   priority: "low" | "normal" | "urgent";
   created_at: string;
   started_at: string;
-  completed_at:string
+  completed_at: string;
   updated_at: string;
 };
 
@@ -40,5 +52,13 @@ export type ServiceRequestWithDetails = ServiceRequest & {
     phone_number?: string;
   };
   category?: ServiceCategory;
-  distance_km?: number; 
+  distance_km?: number;
+};
+
+// Real-time location data for tracking
+export type HandymanLocationBroadcast = {
+  lat: number;
+  lng: number;
+  heading?: number;
+  timestamp: number;
 };

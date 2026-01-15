@@ -4,6 +4,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Alert } from "react-native";
 
 const fetchHandymanProfile = async (): Promise<HandymanProfile | null> => {
+  // Check for active session first
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) {
+    return null; // No session, return null instead of throwing
+  }
+
   // Get current user
   const {
     data: { user },
@@ -11,7 +17,7 @@ const fetchHandymanProfile = async (): Promise<HandymanProfile | null> => {
   } = await supabase.auth.getUser();
 
   if (userError) throw userError;
-  if (!user) throw new Error("No user found");
+  if (!user) return null;
 
   // Fetch handyman profile data
   const { data: handymanData, error: handymanError } = await supabase

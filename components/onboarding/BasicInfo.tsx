@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/form-control";
 import { Input, InputField } from "@/components/ui/input";
 import { VStack } from "@/components/ui/vstack";
+import { useCountry } from "@/contexts/CountryContext";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { Controller, useForm } from "react-hook-form";
 import { ActivityIndicator, View } from "react-native";
@@ -32,10 +33,12 @@ interface BasicInfoProps {
   isSubmitting?: boolean;
 }
 
-export default function BasicInfo({ 
+export default function BasicInfo({
   onSubmit: onSubmitProp,
-  isSubmitting = false 
+  isSubmitting = false
 }: BasicInfoProps) {
+  const { config } = useCountry();
+
   const {
     control,
     handleSubmit,
@@ -48,7 +51,7 @@ export default function BasicInfo({
       city: "",
       region: "",
       district: "",
-      country: "Ghana",
+      country: config.name,
     },
   });
 
@@ -102,7 +105,7 @@ export default function BasicInfo({
             </FormControlLabel>
             <Input className="my-1 rounded-xl" size="xl">
               <InputField
-                placeholder="e.g. +233 24 123 4567"
+                placeholder={`e.g. ${config.phone.exampleFormat}`}
                 value={value}
                 onChangeText={onChange}
                 onBlur={onBlur}
@@ -131,7 +134,7 @@ export default function BasicInfo({
             </FormControlLabel>
             <Input className="my-1 rounded-xl" size="xl">
               <InputField
-                placeholder="e.g. Kumasi"
+                placeholder={config.location.cityPlaceholder}
                 value={value}
                 onChangeText={onChange}
                 onBlur={onBlur}
@@ -159,7 +162,7 @@ export default function BasicInfo({
             </FormControlLabel>
             <Input className="my-1 rounded-xl" size="xl">
               <InputField
-                placeholder="e.g. Ashanti"
+                placeholder={config.location.regionPlaceholder}
                 value={value}
                 onChangeText={onChange}
                 onBlur={onBlur}
@@ -187,7 +190,7 @@ export default function BasicInfo({
             </FormControlLabel>
             <Input className="my-1 rounded-xl" size="xl">
               <InputField
-                placeholder="e.g. Kumasi Metro"
+                placeholder={config.location.districtPlaceholder}
                 value={value}
                 onChangeText={onChange}
                 onBlur={onBlur}
@@ -215,7 +218,7 @@ export default function BasicInfo({
             </FormControlLabel>
             <Input className="my-1 rounded-xl" size="xl">
               <InputField
-                placeholder="e.g. Ghana"
+                placeholder={`e.g. ${config.name}`}
                 value={value}
                 onChangeText={onChange}
                 onBlur={onBlur}

@@ -7,12 +7,18 @@ export type Certificate = {
   size: number;
 };
 
+export type UploadedImage = {
+  url: string;
+  cloudinary_public_id: string;
+};
+
 type FileInput = File | { uri: string; name: string; type: string };
 
 const CLOUDINARY_CLOUD_NAME = process.env.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME;
 const CLOUDINARY_UPLOAD_PRESET =
   process.env.EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
 const CLOUDINARY_FOLDER = "handyman_certificates";
+const CLOUDINARY_AVATAR_FOLDER = "avatars";
 
 if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_UPLOAD_PRESET) {
   throw new Error(
@@ -86,4 +92,47 @@ export const uploadCertificates = async (
   }
 
   return certificates;
+};
+
+export const uploadAvatarToCloudinary = async (
+  file: FileInput
+): Promise<UploadedImage> => {
+  const formData = new FormData();
+
+  if ("uri" in file) {
+    formData.append("file", {
+      uri: file.uri,
+      type: file.type || "image/jpeg",
+      name: file.name || "avatar.jpg",
+    } as any);
+  } else {
+    formData.append("file", file);
+  }
+
+  formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET!);
+  formData.append("folder", CLOUDINARY_AVATAR_FOLDER);
+  formData.append("resource_type", "image");
+
+  const response = await fetch(
+    `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+      body: formData as any,
+    }
+  );
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error?.message || "Avatar upload failed");
+  }
+
+  const data = await response.json();
+
+  return {
+    url: data.secure_url,
+    cloudinary_public_id: data.public_id,
+  };
 };
